@@ -1,0 +1,38 @@
+{
+  "name": "@pantheon-forge/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
+  },
+  "dependencies": {
+    "@pantheon-forge/agent-types": "workspace:*",
+    "@pantheon-forge/agent-registry": "workspace:*",
+    "@pantheon-forge/crypto": "workspace:*",
+    "@pantheon-forge/ui": "workspace:*",
+    "@tanstack/react-query": "^5.67.3",
+    "@tauri-apps/api": "^2.10.1",
+    "framer-motion": "^12.23.24",
+    "next": "16.2.3",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@tauri-apps/cli": "^2.10.1",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.3",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
