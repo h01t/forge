@@ -15,7 +15,7 @@ use std::pin::Pin;
 use storage::StorageManager;
 use std::path::PathBuf;
 use std::sync::Arc;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 
 // Tauri state for shared storage manager
 struct AppState {
@@ -135,9 +135,20 @@ async fn chat_completion(
         .map_err(|e| e.to_string())
 }
 
-/// Stream a chat completion
+#[derive(Clone, serde::Serialize)]
+struct StreamPayload {
+    request_id: String,
+    event_type: String,
+    delta: Option<String>,
+    finish_reason: Option<String>,
+    error: Option<String>,
+}
+
+/// Stream a chat completion, emitting events via Tauri
 #[tauri::command]
 async fn stream_chat_completion(
+    app_handle: tauri::AppHandle,
+    request_id: String,
     provider_id: String,
     messages: Vec<Message>,
     model: Option<String>,
@@ -182,16 +193,47 @@ async fn stream_chat_completion(
     let mut stream: Pin<Box<dyn futures_util::Stream<Item = StreamEvent> + Send>> =
         provider.stream_completion(request).await;
 
-    // Collect all content chunks
     let mut full_content = String::new();
 
     while let Some(event) = stream.next().await {
         match event {
+            StreamEvent::Start { .. } => {
+                let _ = app_handle.emit("stream-event", StreamPayload {
+                    request_id: request_id.clone(),
+                    event_type: "start".into(),
+                    delta: None,
+                    finish_reason: None,
+                    error: None,
+                });
+            }
             StreamEvent::Content { delta } => {
                 full_content.push_str(&delta);
+                let _ = app_handle.emit("stream-event", StreamPayload {
+                    request_id: request_id.clone(),
+                    event_type: "content".into(),
+                    delta: Some(delta),
+                    finish_reason: None,
+                    error: None,
+                });
             }
-            StreamEvent::Done { .. } => break,
+            StreamEvent::Done { finish_reason, .. } => {
+                let _ = app_handle.emit("stream-event", StreamPayload {
+                    request_id: request_id.clone(),
+                    event_type: "done".into(),
+                    delta: None,
+                    finish_reason,
+                    error: None,
+                });
+                break;
+            }
             StreamEvent::Error { message } => {
+                let _ = app_handle.emit("stream-event", StreamPayload {
+                    request_id: request_id.clone(),
+                    event_type: "error".into(),
+                    delta: None,
+                    finish_reason: None,
+                    error: Some(message.clone()),
+                });
                 return Err(format!("Stream error: {}", message));
             }
             _ => {}

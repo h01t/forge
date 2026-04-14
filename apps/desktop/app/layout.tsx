@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Fira_Code } from "next/font/google";
+import TauriGuard from "@/components/TauriGuard";
 import "./globals.css";
 
 const inter = Inter({
@@ -34,7 +35,7 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico" />
       </head>
       <body className="min-h-full flex flex-col bg-surface-primary text-text-primary scanlines">
-        {children}
+        <TauriGuard>{children}</TauriGuard>
       </body>
     </html>
   );
