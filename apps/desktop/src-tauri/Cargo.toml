@@ -57,4 +57,4 @@ pbkdf2 = "0.12"
 sha2 = "0.10"
 
 # SQLite with encryption
-sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "sqlite"] }
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "sqlite", "migrate"] }

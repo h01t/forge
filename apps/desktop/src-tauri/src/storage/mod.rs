@@ -79,43 +79,9 @@ impl StorageManager {
 
     /// Initialize database schema
     async fn init(&self) -> Result<(), StorageError> {
-        sqlx::query(
-            r#"
-            CREATE TABLE IF NOT EXISTS conversations (
-                id TEXT PRIMARY KEY,
-                agent_id TEXT NOT NULL,
-                title TEXT NOT NULL,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
-            );
+        static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations");
+        MIGRATOR.run(&self.pool).await.map_err(|e| StorageError::DatabaseError(e.into()))?;
 
-            CREATE TABLE IF NOT EXISTS messages (
-                id TEXT PRIMARY KEY,
-                conversation_id TEXT NOT NULL,
-                role TEXT NOT NULL,
-                content TEXT NOT NULL,
-                created_at TEXT NOT NULL,
-                tool_calls TEXT,
-                tool_call_id TEXT,
-                FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
-            );
-
-            CREATE TABLE IF NOT EXISTS settings (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                key TEXT UNIQUE NOT NULL,
-                value TEXT NOT NULL,
-                updated_at TEXT NOT NULL
-            );
-
-            CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id);
-            CREATE INDEX IF NOT EXISTS idx_conversations_agent ON conversations(agent_id);
-            CREATE INDEX IF NOT EXISTS idx_conversations_updated ON conversations(updated_at DESC);
-            "#,
-        )
-        .execute(&self.pool)
-        .await?;
-
-        // Initialize default settings
         self.init_default_settings().await?;
 
         Ok(())

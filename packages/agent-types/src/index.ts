@@ -1,23 +1,82 @@
-// Core types for Pantheon Forge
-
 export type ProviderId = 'anthropic' | 'openai' | 'google' | 'deepseek' | 'ollama';
 
-export interface Message {
+export type MessageRole = 'system' | 'user' | 'assistant' | 'tool';
+
+export interface FunctionCall {
+  name: string;
+  arguments: string;
+}
+
+export interface ToolCall {
   id: string;
-  role: 'user' | 'assistant' | 'system' | 'tool';
+  type: string;
+  function: FunctionCall;
+}
+
+export interface Message {
+  id?: string;
+  role: MessageRole;
   content: string;
-  timestamp: number;
+  timestamp?: number;
   metadata?: Record<string, unknown>;
+  tool_calls?: ToolCall[];
+  tool_call_id?: string;
+}
+
+export interface Choice {
+  index: number;
+  message: Message;
+  finish_reason?: string;
+}
+
+export interface Usage {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+}
+
+export interface ChatCompletionResponse {
+  id: string;
+  object: string;
+  created: number;
+  model: string;
+  choices: Choice[];
+  usage?: Usage;
+}
+
+export interface ProviderCredential {
+  provider_id: ProviderId;
+  api_key: string;
+  base_url?: string;
+  model?: string;
+  created_at: number;
 }
 
 export interface Conversation {
   id: string;
-  agentId: string;
+  agent_id: string;
   title: string;
-  messages: Message[];
-  createdAt: number;
-  updatedAt: number;
+  created_at: string;
+  updated_at: string;
 }
+
+export interface StoredMessage {
+  id: string;
+  conversation_id: string;
+  role: string;
+  content: string;
+  created_at: string;
+  tool_calls?: string;
+  tool_call_id?: string;
+}
+
+export const PROVIDERS: { id: ProviderId; name: string; defaultModel: string }[] = [
+  { id: 'anthropic', name: 'Anthropic', defaultModel: 'claude-3-5-sonnet-20241022' },
+  { id: 'openai', name: 'OpenAI', defaultModel: 'gpt-4o' },
+  { id: 'google', name: 'Google', defaultModel: 'gemini-2.0-flash-exp' },
+  { id: 'deepseek', name: 'DeepSeek', defaultModel: 'deepseek-chat' },
+  { id: 'ollama', name: 'Ollama', defaultModel: 'llama3.2' },
+];
 
 export interface LLMProviderConfig {
   id: ProviderId;

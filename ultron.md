@@ -827,7 +827,7 @@ export const cyberpunkTheme = {
 
 ## 14. Implementation Phases
 
-### Phase 1: Foundation & Cleanup (Weeks 1-2) — IN PROGRESS
+### Phase 1: Foundation & Cleanup (Weeks 1-2) — COMPLETE
 
 **Goal**: Solid foundation with correct architecture
 
@@ -842,11 +842,11 @@ export const cyberpunkTheme = {
 - [x] Implement credential storage via OS keyring
 - [x] Build settings UI for provider configuration
 - [x] Implement chat completion with streaming
-- [ ] **Fix**: Consolidate types into `@pantheon-forge/agent-types` (remove duplicates from `lib/tauri.ts`)
-- [ ] **Fix**: DB path should use Tauri app data dir (not `current_dir()`)
-- [ ] **Fix**: Use `tauri::async_runtime::block_on()` instead of creating separate tokio runtime
-- [ ] **Fix**: Adopt `sqlx::migrate!()` instead of inline schema creation
-- [ ] **Fix**: Split `lib.rs` IPC handlers into `ipc/` modules
+- [x] **Fix**: Consolidate types into `@pantheon-forge/agent-types` (remove duplicates from `lib/tauri.ts`)
+- [x] **Fix**: DB path should use Tauri app data dir (not `current_dir()`)
+- [x] **Fix**: Use `tauri::async_runtime::block_on()` instead of creating separate tokio runtime
+- [x] **Fix**: Adopt `sqlx::migrate!()` instead of inline schema creation
+- [x] **Fix**: Split `lib.rs` IPC handlers into `ipc/` modules
 
 ### Phase 2: Agent System (Weeks 3-4)
 
