@@ -7,6 +7,7 @@ import {
   getMessages as fetchMessages,
 } from '@/lib/tauri';
 import { listenStream, generateRequestId, type UnlistenFn } from '@/lib/streaming';
+import { useAgentStore } from './agents';
 
 export interface DisplayMessage {
   id: string;
@@ -60,6 +61,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const state = get();
     if (state.streaming) return;
 
+    const currentAgent = useAgentStore.getState().currentAgent;
+
     const userMsg: DisplayMessage = {
       id: nextMsgId(),
       role: 'user',
@@ -81,8 +84,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     let conversation = state.conversation;
     if (!conversation) {
+      const agentId = currentAgent?.id ?? 'default';
+      const title = content.slice(0, 60) + (content.length > 60 ? '...' : '');
       try {
-        conversation = await createConversation('default', 'New Conversation');
+        conversation = await createConversation(agentId, title);
         set({ conversation });
       } catch (e) {
         set({ error: String(e), streaming: false });
@@ -93,12 +98,21 @@ export const useChatStore = create<ChatState>((set, get) => ({
     try {
       await addMessage(conversation.id, { role: 'user', content });
     } catch {
-      // best effort
     }
 
-    const allMessages: Message[] = get()
+    const historyMessages: Message[] = get()
       .messages.filter((m) => !m.streaming)
       .map((m) => ({ role: m.role, content: m.content }));
+
+    const allMessages: Message[] = [];
+    if (currentAgent?.systemPrompt) {
+      allMessages.push({ role: 'system', content: currentAgent.systemPrompt });
+    }
+    allMessages.push(...historyMessages);
+
+    const effectiveProvider = currentAgent?.llmPreference
+      ? (currentAgent.llmPreference as ProviderId)
+      : providerId;
 
     const requestId = generateRequestId();
     let unlisten: UnlistenFn | undefined;
@@ -133,7 +147,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
                 content: finalContent,
               });
             } catch {
-              // best effort
             }
           }
 
@@ -155,7 +168,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
       await streamChatCompletion(
         requestId,
-        providerId,
+        effectiveProvider,
         allMessages,
         model,
       );

@@ -1,6 +1,7 @@
 'use client';
 
 import type { Conversation } from '@/lib/tauri';
+import { useAgentStore } from '@/stores/agents';
 import Link from 'next/link';
 
 interface ConversationListProps {
@@ -18,6 +19,12 @@ export default function ConversationList({
   onDelete,
   onNew,
 }: ConversationListProps) {
+  const { agents } = useAgentStore();
+
+  const getAgentName = (agentId: string) => {
+    const agent = agents.find((a) => a.id === agentId);
+    return agent?.name ?? agentId;
+  };
   return (
     <aside className="w-72 bg-surface-secondary border-r border-border-default flex flex-col">
       <div className="p-4 border-b border-border-default">
@@ -52,9 +59,16 @@ export default function ConversationList({
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm text-text-primary truncate flex-1">
-                  {conv.title}
-                </span>
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <span className="text-sm text-text-primary truncate">
+                    {conv.title}
+                  </span>
+                  {conv.agent_id && conv.agent_id !== 'default' && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary-500/20 text-primary-500 whitespace-nowrap">
+                      {getAgentName(conv.agent_id)}
+                    </span>
+                  )}
+                </div>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();

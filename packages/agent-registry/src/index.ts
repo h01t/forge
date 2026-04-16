@@ -2,6 +2,13 @@ import { parseDocument } from 'yaml';
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
 import type { Agent, AgentCapability, Tool, CollaborationRule } from '@pantheon-forge/agent-types';
+import { agentsData } from './agents-data';
+
+export { agentsData } from './agents-data';
+
+export function getAgentsData(): Agent[] {
+  return agentsData;
+}
 
 export interface AgentDefinition {
   id: string;

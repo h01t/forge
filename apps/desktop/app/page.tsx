@@ -1,32 +1,23 @@
 'use client';
 
 import { useSettingsStore } from '@/stores/settings';
+import { useAgentStore } from '@/stores/agents';
 import { useEffect } from 'react';
 import Link from 'next/link';
 
-const agents = [
-  {
-    id: 'software-engineer',
-    name: 'Software Engineer',
-    description: 'Expert in code generation, debugging, and best practices',
-    icon: '\u26A1',
-    color: 'from-cyan-500 to-blue-600',
-  },
-  {
-    id: 'cybersecurity',
-    name: 'Cybersecurity Specialist',
-    description: 'Expert in vulnerability analysis and secure coding',
-    icon: '\uD83D\uDEE1\uFE0F',
-    color: 'from-magenta-500 to-purple-600',
-  },
-];
+const agentMeta: Record<string, { icon: string; color: string }> = {
+  'software-engineer': { icon: '\u26A1', color: 'from-cyan-500 to-blue-600' },
+  cybersecurity: { icon: '\uD83D\uDEE1\uFE0F', color: 'from-magenta-500 to-purple-600' },
+};
 
 export default function Home() {
   const { init, activeProvider, providers } = useSettingsStore();
+  const { agents, init: initAgents } = useAgentStore();
 
   useEffect(() => {
     init();
-  }, [init]);
+    initAgents();
+  }, [init, initAgents]);
 
   const hasConfiguredProvider = activeProvider && providers[activeProvider]?.credential !== null;
 
@@ -44,32 +35,35 @@ export default function Home() {
           <h2 className="text-xs font-display text-text-tertiary uppercase tracking-widest mb-4">
             Available Agents
           </h2>
-          {agents.map((agent) => (
-            <Link
-              key={agent.id}
-              href="/chat/"
-              className="w-full p-4 rounded-lg text-left transition-all duration-300 cyber-card block"
-            >
-              <div className="flex items-start gap-3">
-                <div className={`text-2xl p-2 rounded-lg bg-gradient-to-br ${agent.color} bg-opacity-20`}>
-                  {agent.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-display font-semibold text-text-primary truncate">
-                      {agent.name}
-                    </h3>
-                    {hasConfiguredProvider && (
-                      <span className="w-2 h-2 rounded-full bg-accent-500 pulse-glow" />
-                    )}
+          {agents.map((agent) => {
+            const meta = agentMeta[agent.id] ?? { icon: '?', color: 'from-gray-500 to-gray-600' };
+            return (
+              <Link
+                key={agent.id}
+                href={`/chat/?agent=${agent.id}`}
+                className="w-full p-4 rounded-lg text-left transition-all duration-300 cyber-card block"
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`text-2xl p-2 rounded-lg bg-gradient-to-br ${meta.color} bg-opacity-20`}>
+                    {meta.icon}
                   </div>
-                  <p className="text-xs text-text-secondary mt-1 line-clamp-2">
-                    {agent.description}
-                  </p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-display font-semibold text-text-primary truncate">
+                        {agent.name}
+                      </h3>
+                      {hasConfiguredProvider && (
+                        <span className="w-2 h-2 rounded-full bg-accent-500 pulse-glow" />
+                      )}
+                    </div>
+                    <p className="text-xs text-text-secondary mt-1 line-clamp-2">
+                      {agent.description}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
         </div>
 
         <div className="p-4 border-t border-border-default">
@@ -107,10 +101,10 @@ export default function Home() {
               )}
             </p>
             <div className="grid grid-cols-2 gap-4">
-              <Link
-                href="/chat/"
-                className="p-4 rounded-lg bg-surface-tertiary border border-border-default hover:border-primary-500/40 transition-colors block"
-              >
+                <Link
+                  href="/chat/"
+                  className="p-4 rounded-lg bg-surface-tertiary border border-border-default hover:border-primary-500/40 transition-colors block"
+                >
                 <div className="text-2xl mb-2">&#128172;</div>
                 <h3 className="font-display text-sm text-text-primary mb-1">Start Chat</h3>
                 <p className="text-xs text-text-tertiary">Begin a conversation</p>

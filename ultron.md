@@ -848,18 +848,21 @@ export const cyberpunkTheme = {
 - [x] **Fix**: Adopt `sqlx::migrate!()` instead of inline schema creation
 - [x] **Fix**: Split `lib.rs` IPC handlers into `ipc/` modules
 
-### Phase 2: Agent System (Weeks 3-4)
+### Phase 2: Agent System (Weeks 3-4) — COMPLETE
 
 **Goal**: Data-driven agent system with YAML configs
 
 - [x] Implement YAML agent configuration parser (`agent-registry` package)
 - [x] Create Software Engineer agent YAML
 - [x] Create Cybersecurity Specialist agent YAML
-- [ ] Wire agent selection into chat flow (inject system prompt from YAML)
-- [ ] Build agent selection/switching UI
-- [ ] Connect agent's `llm_preference` to provider selection
-- [ ] Filter available tools per-agent based on YAML `tools` list
-- [ ] Add agent metadata to conversation persistence
+- [x] Pre-compile agent data as browser-safe static exports
+- [x] Wire agent selection into chat flow (inject system prompt from YAML)
+- [x] Build agent selection/switching UI (home page → chat with `?agent=id`)
+- [x] Connect agent's `llm_preference` to provider selection
+- [x] Filter available tools per-agent based on YAML `tools` list
+- [x] Add agent metadata to conversation persistence (agent_id stored correctly)
+- [x] Display active agent name in chat header and message labels
+- [x] Show agent badge in ConversationList items
 
 ### Phase 3: Tool System (Weeks 5-6)
 

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useChatStore } from '@/stores/chat';
 import { useSettingsStore } from '@/stores/settings';
+import { useAgentStore } from '@/stores/agents';
 import { PROVIDERS } from '@/lib/tauri';
 
 export default function ChatInput() {
@@ -10,11 +11,16 @@ export default function ChatInput() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { sendMessage, streaming } = useChatStore();
   const { activeProvider, providers } = useSettingsStore();
+  const { currentAgent } = useAgentStore();
 
-  const hasProvider = activeProvider && providers[activeProvider]?.credential !== null;
-  const model = activeProvider
-    ? providers[activeProvider]?.credential?.model ??
-      PROVIDERS.find((p) => p.id === activeProvider)?.defaultModel
+  const resolvedProvider = currentAgent?.llmPreference
+    ? (currentAgent.llmPreference as typeof activeProvider)
+    : activeProvider;
+
+  const hasProvider = resolvedProvider && providers[resolvedProvider]?.credential !== null;
+  const model = resolvedProvider
+    ? providers[resolvedProvider]?.credential?.model ??
+      PROVIDERS.find((p) => p.id === resolvedProvider)?.defaultModel
     : undefined;
 
   useEffect(() => {
@@ -26,8 +32,8 @@ export default function ChatInput() {
 
   const handleSubmit = () => {
     const trimmed = input.trim();
-    if (!trimmed || !activeProvider || !hasProvider || streaming) return;
-    sendMessage(trimmed, activeProvider, model);
+    if (!trimmed || !resolvedProvider || !hasProvider || streaming) return;
+    sendMessage(trimmed, resolvedProvider, model);
     setInput('');
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';

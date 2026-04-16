@@ -3,8 +3,15 @@
   "version": "0.1.0",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "browser": "./dist/browser.js",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
+    "build:agents": "echo 'Update src/agents-data.ts manually from agents/*/agent.yaml' && exit 0",
     "dev": "tsc --watch",
     "clean": "rm -rf dist"
   },
