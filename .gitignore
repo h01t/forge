@@ -45,3 +45,6 @@ coverage/
 # Temporary
 *.tmp
 .cache/
+
+# AGENT.md
+AGENT.md
