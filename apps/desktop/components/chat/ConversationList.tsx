@@ -49,10 +49,13 @@ export default function ConversationList({
           </p>
         ) : (
           conversations.map((conv) => (
-            <button
+            <div
               key={conv.id}
+              role="button"
+              tabIndex={0}
               onClick={() => onSelect(conv.id)}
-              className={`w-full p-3 rounded-lg text-left transition-all duration-200 group ${
+              onKeyDown={(e) => { if (e.key === 'Enter') onSelect(conv.id); }}
+              className={`w-full p-3 rounded-lg text-left transition-all duration-200 group cursor-pointer ${
                 activeId === conv.id
                   ? 'bg-surface-elevated border border-primary-500/40'
                   : 'hover:bg-surface-hover border border-transparent'
@@ -80,9 +83,9 @@ export default function ConversationList({
                 </button>
               </div>
               <div className="text-xs text-text-tertiary mt-1">
-                {new Date(conv.updated_at).toLocaleDateString()}
-              </div>
-            </button>
+              {new Date(conv.updated_at).toLocaleDateString()}
+            </div>
+            </div>
           ))
         )}
       </div>

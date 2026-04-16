@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useChatStore } from '@/stores/chat';
 import { useSettingsStore } from '@/stores/settings';
 import { useAgentStore } from '@/stores/agents';
-import { PROVIDERS } from '@/lib/tauri';
+import { PROVIDERS, type ProviderId } from '@/lib/tauri';
 
 export default function ChatInput() {
   const [input, setInput] = useState('');
@@ -13,8 +13,9 @@ export default function ChatInput() {
   const { activeProvider, providers } = useSettingsStore();
   const { currentAgent } = useAgentStore();
 
-  const resolvedProvider = currentAgent?.llmPreference
-    ? (currentAgent.llmPreference as typeof activeProvider)
+  const agentPref = currentAgent?.llmPreference as ProviderId | undefined;
+  const resolvedProvider = (agentPref && providers[agentPref]?.credential)
+    ? agentPref
     : activeProvider;
 
   const hasProvider = resolvedProvider && providers[resolvedProvider]?.credential !== null;

@@ -110,9 +110,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
     allMessages.push(...historyMessages);
 
-    const effectiveProvider = currentAgent?.llmPreference
-      ? (currentAgent.llmPreference as ProviderId)
-      : providerId;
+    const effectiveProvider = providerId;
 
     const requestId = generateRequestId();
     let unlisten: UnlistenFn | undefined;
