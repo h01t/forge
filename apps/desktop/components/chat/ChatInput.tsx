@@ -14,9 +14,18 @@ export default function ChatInput() {
   const { currentAgent } = useAgentStore();
 
   const agentPref = currentAgent?.llmPreference as ProviderId | undefined;
-  const resolvedProvider = (agentPref && providers[agentPref]?.credential)
+  const defaultProvider = (agentPref && providers[agentPref]?.credential)
     ? agentPref
     : activeProvider;
+
+  const [selectedProvider, setSelectedProvider] = useState<ProviderId | null>(null);
+  const resolvedProvider = selectedProvider ?? defaultProvider;
+
+  useEffect(() => {
+    if (!selectedProvider && defaultProvider) {
+      setSelectedProvider(defaultProvider);
+    }
+  }, [defaultProvider, selectedProvider]);
 
   const hasProvider = resolvedProvider && providers[resolvedProvider]?.credential !== null;
   const model = resolvedProvider
@@ -51,6 +60,32 @@ export default function ChatInput() {
   return (
     <div className="p-4 border-t border-border-default bg-surface-secondary/80 backdrop-blur-sm">
       <div className="max-w-3xl mx-auto">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-[10px] text-text-muted uppercase tracking-wider">Provider</span>
+          <div className="flex gap-1">
+            {PROVIDERS.map((p) => {
+              const configured = providers[p.id]?.credential !== null;
+              const isSelected = resolvedProvider === p.id;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => setSelectedProvider(p.id)}
+                  disabled={!configured}
+                  className={`px-2 py-0.5 text-[11px] rounded transition-all ${
+                    isSelected
+                      ? 'bg-primary-500/30 text-primary-500 border border-primary-500/60'
+                      : configured
+                        ? 'text-text-muted hover:text-text-secondary border border-transparent hover:border-border-default'
+                        : 'text-text-muted/40 border border-transparent cursor-not-allowed'
+                  }`}
+                  title={configured ? `${p.name} (${p.defaultModel})` : `${p.name} — not configured`}
+                >
+                  {p.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
         <div className="relative">
           <textarea
             ref={textareaRef}
