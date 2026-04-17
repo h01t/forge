@@ -1,27 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useMemo, useState, type ComponentType } from 'react';
+import { Brain, Gem, Search, Settings2, Waypoints } from 'lucide-react';
 import type { ProviderId } from '@/lib/tauri';
 import { PROVIDERS } from '@/lib/tauri';
 import { useSettingsStore } from '@/stores/settings';
+import AppShell from '@/components/layout/AppShell';
 import ProviderForm from './ProviderForm';
-import Link from 'next/link';
 
-const providerIcons: Record<ProviderId, string> = {
-  anthropic: '\u{1F9E0}',
-  openai: '\u26A1',
-  google: '\u{1F48E}',
-  deepseek: '\u{1F50D}',
-  ollama: '\u{1F999}',
+const providerIcons: Record<ProviderId, ComponentType<{ size?: number; className?: string }>> = {
+  anthropic: Brain,
+  openai: Waypoints,
+  google: Gem,
+  deepseek: Search,
+  ollama: Settings2,
 };
 
 export default function SettingsLayout() {
-  const { init, providers, setActiveProvider } = useSettingsStore();
+  const { providers, setActiveProvider } = useSettingsStore();
   const [tab, setTab] = useState<ProviderId>('anthropic');
-
-  useEffect(() => {
-    init();
-  }, [init]);
+  const activeProvider = useMemo(
+    () => PROVIDERS.find((provider) => provider.id === tab) ?? PROVIDERS[0],
+    [tab],
+  );
 
   const handleSelectProvider = (providerId: ProviderId) => {
     setTab(providerId);
@@ -33,66 +34,90 @@ export default function SettingsLayout() {
   };
 
   return (
-    <div className="flex h-full w-full">
-      <aside className="w-72 bg-surface-secondary border-r border-border-default flex flex-col">
-        <div className="p-6 border-b border-border-default">
-          <h1 className="text-xl font-display font-bold text-primary-500 text-glow-cyan tracking-wider">
-            SETTINGS
-          </h1>
-          <p className="text-sm text-text-muted mt-1">Configure providers</p>
-        </div>
+    <AppShell
+      title="Provider Settings"
+      description="Manage the model gateways that power the shell. Available providers get full forms, while planned integrations stay visible as roadmap-level status."
+      stageWidth="settings"
+    >
+      <section className="shell-panel px-4 py-4 md:px-5 md:py-5">
+        <div className="grid gap-5 xl:grid-cols-[296px_minmax(0,1fr)]">
+          <aside className="shell-panel-muted flex flex-col gap-4 px-4 py-4">
+            <div>
+              <p className="shell-kicker text-primary-400">Gateway Directory</p>
+              <h2 className="mt-2 text-[1.65rem] font-display font-semibold text-text-primary">
+                Provider registry
+              </h2>
+              <p className="mt-2 text-sm leading-7 text-text-secondary">
+                Select a gateway to configure credentials or review roadmap status.
+              </p>
+            </div>
 
-        <nav className="flex-1 p-3 space-y-1">
-          {PROVIDERS.map((p) => {
-            const configured = p.status === 'available' && providers[p.id]?.credential !== null;
-            return (
-              <button
-                key={p.id}
-                onClick={() => handleSelectProvider(p.id)}
-                className={`w-full p-3 rounded-lg text-left transition-all duration-200 flex items-center gap-3 ${
-                  tab === p.id
-                    ? 'bg-surface-elevated border border-primary-500/40'
-                    : 'hover:bg-surface-hover border border-transparent'
-                }`}
-              >
-                <span className="text-lg">{providerIcons[p.id]}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-display text-text-primary">{p.name}</div>
-                  <div className="text-xs text-text-tertiary">
-                    {p.status === 'planned' ? 'Planned integration' : p.defaultModel}
-                  </div>
-                </div>
-                {configured && (
-                  <span className="w-2 h-2 rounded-full bg-accent-500 pulse-glow" />
-                )}
-                {p.status === 'planned' && (
-                  <span className="text-[9px] px-1.5 py-0.5 rounded-sm border border-warning-500/40 text-warning-500">
-                    PLANNED
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </nav>
+            <nav className="grid gap-2">
+              {PROVIDERS.map((provider) => {
+                const Icon = providerIcons[provider.id];
+                const configured =
+                  provider.status === 'available' &&
+                  providers[provider.id]?.credential !== null;
 
-        <div className="p-4 border-t border-border-default">
-          <Link
-            href="/chat/"
-            className="block w-full py-2 px-4 text-center cyber-button text-sm rounded-lg"
-          >
-            BACK TO CHAT
-          </Link>
-        </div>
-      </aside>
+                return (
+                  <button
+                    key={provider.id}
+                    type="button"
+                    onClick={() => handleSelectProvider(provider.id)}
+                    className={`rounded-2xl border px-4 py-3.5 text-left transition-all duration-200 ${
+                      tab === provider.id
+                        ? 'border-primary-500/40 bg-primary-500/10 shadow-[0_0_0_1px_rgba(0,240,255,0.08)]'
+                        : 'border-border-subtle bg-surface-secondary/75 hover:border-border-highlight hover:bg-surface-hover'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="shell-icon-chip">
+                        <Icon size={15} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-sm font-medium text-text-primary">{provider.name}</p>
+                          {provider.status === 'planned' ? (
+                            <span className="shell-pill border-warning-500/30 bg-warning-500/10 text-warning-500">
+                              Planned
+                            </span>
+                          ) : null}
+                          {configured ? (
+                            <span className="shell-pill border-accent-500/25 bg-accent-500/10 text-accent-500">
+                              Ready
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className="mt-2 text-xs text-text-secondary">
+                          {provider.status === 'planned'
+                            ? 'Roadmap integration'
+                            : provider.defaultModel}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </nav>
+          </aside>
 
-      <main className="flex-1 flex flex-col bg-surface-primary relative">
-        <div className="absolute inset-0 grid-bg pointer-events-none" />
-        <div className="relative z-10 flex-1 overflow-y-auto p-8">
-          <div className="max-w-2xl mx-auto">
+          <div className="shell-panel-muted min-h-[var(--shell-content-height)] px-5 py-5">
+            <div className="mb-5 flex items-center justify-between gap-4 border-b border-border-subtle pb-4">
+              <div>
+                <p className="shell-kicker text-primary-400">Selected Gateway</p>
+                <h3 className="mt-2 text-[1.95rem] font-display font-semibold text-text-primary">
+                  {activeProvider.name}
+                </h3>
+              </div>
+              <span className="shell-pill">
+                {activeProvider.status === 'planned' ? 'Roadmap' : 'Configurable'}
+              </span>
+            </div>
+
             <ProviderForm key={tab} providerId={tab} />
           </div>
         </div>
-      </main>
-    </div>
+      </section>
+    </AppShell>
   );
 }

@@ -1,8 +1,8 @@
 'use client';
 
+import { Plus, Trash2, X } from 'lucide-react';
 import type { Conversation } from '@/lib/tauri';
 import { useAgentStore } from '@/stores/agents';
-import Link from 'next/link';
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -10,6 +10,8 @@ interface ConversationListProps {
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
   onNew: () => void;
+  drawer?: boolean;
+  onClose?: () => void;
 }
 
 function relativeTime(dateStr: string): string {
@@ -17,110 +19,147 @@ function relativeTime(dateStr: string): string {
   const then = new Date(dateStr).getTime();
   const diffMs = now - then;
   const diffMin = Math.floor(diffMs / 60000);
+
   if (diffMin < 1) return 'just now';
   if (diffMin < 60) return `${diffMin}m ago`;
+
   const diffHr = Math.floor(diffMin / 60);
   if (diffHr < 24) return `${diffHr}h ago`;
+
   const diffDay = Math.floor(diffHr / 24);
   if (diffDay < 7) return `${diffDay}d ago`;
+
   return new Date(dateStr).toLocaleDateString();
 }
 
-export default function ConversationList({
+function ConversationPanel({
   conversations,
   activeId,
   onSelect,
   onDelete,
   onNew,
-}: ConversationListProps) {
+  onClose,
+}: Omit<ConversationListProps, 'drawer'>) {
   const { agents } = useAgentStore();
 
   const getAgentName = (agentId: string) => {
-    const agent = agents.find((a) => a.id === agentId);
+    const agent = agents.find((item) => item.id === agentId);
     return agent?.name ?? agentId;
   };
 
   return (
-    <aside className="w-72 bg-surface-secondary border-r border-border-default flex flex-col shrink-0">
-      <div className="p-4 border-b border-border-default">
-        <Link href="/" className="block">
-          <h2 className="text-sm font-display font-bold text-primary-500 text-glow-cyan tracking-widest">
-            PANTHEON FORGE
+    <section className="shell-panel shell-panel-clip flex h-full min-h-[var(--shell-content-height)] flex-col">
+      <div className="flex items-center justify-between gap-3 border-b border-border-subtle px-5 py-[1.125rem]">
+        <div>
+          <p className="shell-kicker text-primary-400">Workspace Threads</p>
+          <h2 className="mt-2 text-[1.15rem] font-display font-semibold text-text-primary">
+            Conversations
           </h2>
-        </Link>
+        </div>
+
+        {onClose ? (
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-border-default bg-surface-secondary text-text-secondary transition-colors hover:border-primary-500/30 hover:text-text-primary"
+          >
+            <X size={16} />
+          </button>
+        ) : null}
       </div>
 
-      <div className="px-3 pt-3 pb-2">
+      <div className="px-5 py-3.5">
         <button
           onClick={onNew}
-          className="w-full cyber-button text-xs py-2"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-primary-500/35 bg-primary-500/10 px-4 py-2.5 text-sm font-medium text-primary-400 transition-all duration-200 hover:border-primary-400/50 hover:bg-primary-500/15"
         >
-          + NEW CHAT
+          <Plus size={16} />
+          New Conversation
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 pb-2 space-y-0.5">
+      <div className="flex-1 overflow-y-auto px-4 pb-4">
         {conversations.length === 0 ? (
-          <p className="text-xs text-text-muted text-center py-6">
-            No conversations yet
-          </p>
+          <div className="shell-panel-muted px-5 py-6 text-sm leading-7 text-text-secondary">
+            No conversations yet. Start a new thread to anchor the workspace.
+          </div>
         ) : (
-          conversations.map((conv) => (
-            <div
-              key={conv.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => onSelect(conv.id)}
-              onKeyDown={(e) => { if (e.key === 'Enter') onSelect(conv.id); }}
-              className={`w-full px-3 py-2.5 rounded-md text-left transition-all duration-150 group cursor-pointer ${
-                activeId === conv.id
-                  ? 'bg-surface-elevated border border-primary-500/30'
-                  : 'hover:bg-surface-hover border border-transparent'
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs text-text-primary truncate flex-1">
-                  {conv.title}
-                </span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(conv.id);
-                  }}
-                  className="text-text-muted/40 hover:text-error-500 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] shrink-0"
-                >
-                  x
-                </button>
+          <div className="space-y-2.5">
+            {conversations.map((conversation) => (
+              <div
+                key={conversation.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => onSelect(conversation.id)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onSelect(conversation.id);
+                  }
+                }}
+                className={`group rounded-2xl border px-4 py-3.5 text-left transition-all duration-200 ${
+                  activeId === conversation.id
+                    ? 'border-primary-500/40 bg-primary-500/10 shadow-[0_0_0_1px_rgba(0,240,255,0.08)]'
+                    : 'border-border-subtle bg-surface-secondary/75 hover:border-border-highlight hover:bg-surface-hover'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <p className="truncate text-sm font-medium text-text-primary">
+                      {conversation.title}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-text-muted">
+                      <span>{relativeTime(conversation.updated_at)}</span>
+                      {conversation.agent_id && conversation.agent_id !== 'default' ? (
+                        <span className="shell-pill">{getAgentName(conversation.agent_id)}</span>
+                      ) : (
+                        <span className="text-[10px] tracking-[0.16em] text-text-muted">
+                          General chat
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onDelete(conversation.id);
+                    }}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-transparent text-text-muted opacity-60 transition-all duration-200 hover:border-error-500/30 hover:bg-error-500/10 hover:text-error-500 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-[10px] text-text-muted">
-                  {relativeTime(conv.updated_at)}
-                </span>
-                {conv.agent_id && conv.agent_id !== 'default' && (
-                  <span className="text-[9px] px-1.5 py-px rounded-sm bg-primary-500/15 text-primary-400 whitespace-nowrap font-display">
-                    {getAgentName(conv.agent_id)}
-                  </span>
-                )}
-              </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </div>
+    </section>
+  );
+}
 
-      <div className="p-3 border-t border-border-default space-y-1.5">
-        <Link
-          href="/settings/"
-          className="block w-full py-1.5 px-4 text-center cyber-button text-xs rounded-md"
-        >
-          SETTINGS
-        </Link>
-        <Link
-          href="/"
-          className="block w-full py-1.5 px-4 text-center text-xs text-text-tertiary hover:text-text-primary transition-colors"
-        >
-          HOME
-        </Link>
+export default function ConversationList({
+  drawer = false,
+  onClose,
+  ...props
+}: ConversationListProps) {
+  if (!drawer) {
+    return <ConversationPanel {...props} onClose={onClose} />;
+  }
+
+  return (
+    <div className="absolute inset-0 z-30 flex bg-surface-primary/45 backdrop-blur-md">
+      <div className="w-full max-w-[340px] p-4">
+        <ConversationPanel {...props} onClose={onClose} />
       </div>
-    </aside>
+      <button
+        type="button"
+        onClick={onClose}
+        className="h-full flex-1"
+        aria-label="Close conversations panel"
+      />
+    </div>
   );
 }

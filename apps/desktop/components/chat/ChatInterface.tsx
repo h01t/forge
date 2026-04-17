@@ -1,10 +1,11 @@
 'use client';
 
+import { Bot, Sparkles } from 'lucide-react';
 import { useChatStore } from '@/stores/chat';
-import ChatMessage from './ChatMessage';
-import ChatInput from './ChatInput';
-import StreamingIndicator from './StreamingIndicator';
 import { useSettingsStore } from '@/stores/settings';
+import ChatInput from './ChatInput';
+import ChatMessage from './ChatMessage';
+import StreamingIndicator from './StreamingIndicator';
 import type { Agent } from '@pantheon-forge/agent-types';
 
 interface ChatInterfaceProps {
@@ -18,48 +19,80 @@ export default function ChatInterface({ agent }: ChatInterfaceProps) {
     isProviderUsable(activeProvider) || getFirstUsableProvider() !== null;
 
   return (
-    <div className="flex flex-col h-full w-full">
-      {agent && (
-        <div className="px-4 py-2 border-b border-border-default bg-surface-secondary/80 backdrop-blur-sm flex items-center gap-2 shrink-0">
-          <span className="text-base">&#9889;</span>
-          <span className="text-xs font-display font-bold text-primary-500 tracking-wider">{agent.name.toUpperCase()}</span>
-          <span className="text-[11px] text-text-muted truncate">— {agent.description}</span>
-        </div>
-      )}
-      <div className="flex-1 overflow-y-auto px-4 py-4">
-        {messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center max-w-md p-8">
-              <div className="text-5xl mb-4 opacity-60">&#9889;</div>
-              <h2 className="text-xl font-display font-bold text-primary-500 text-glow-cyan mb-2">
-                Ready to Chat
+    <section className="shell-panel shell-panel-clip flex min-h-[var(--shell-content-height)] flex-col">
+      <div className="border-b border-border-subtle px-6 py-5">
+        <div className="mx-auto grid w-full max-w-[880px] gap-4 lg:grid-cols-[minmax(0,1fr)_240px] lg:items-start">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-primary-400">
+              <Bot size={15} />
+              <span className="shell-kicker text-primary-400">Active Specialist</span>
+            </div>
+            <div>
+              <h2 className="text-[1.95rem] font-display font-semibold text-text-primary">
+                {agent ? agent.name : 'Select an agent'}
               </h2>
-              <p className="text-text-secondary text-sm">
+              <p className="mt-2 max-w-2xl text-sm leading-7 text-text-secondary">
                 {agent
-                  ? `Chatting with ${agent.name}. Type a message below.`
-                  : 'Select an agent from the home page, then type a message.'}
-                {!hasUsableProvider && (
-                  <span className="block mt-2 text-warning-500 text-xs">
-                    Configure a provider in Settings first.
-                  </span>
-                )}
+                  ? agent.description
+                  : 'Choose an agent from the launchpad, then start the conversation from this shared workspace.'}
               </p>
             </div>
           </div>
-        ) : (
-          <div className="max-w-4xl mx-auto">
-            {messages.map((msg) => (
-              <ChatMessage key={msg.id} message={msg} agentName={agent?.name} />
-            ))}
+
+          <div className="shell-panel-muted px-5 py-4">
+            <div className="flex items-center gap-2 text-primary-400">
+              <Sparkles size={15} />
+              <span className="shell-kicker text-primary-400">Workspace State</span>
+            </div>
+            <p className="mt-2 text-sm leading-7 text-text-secondary">
+              {hasUsableProvider
+                ? 'At least one provider is ready. Use the composer below to route the message intentionally.'
+                : 'No usable provider is configured yet. Open Settings from the rail to connect a gateway.'}
+            </p>
           </div>
-        )}
-        {streaming && !messages.some((m) => m.streaming) && (
-          <div className="max-w-4xl mx-auto">
-            <StreamingIndicator agentName={agent?.name} />
-          </div>
-        )}
+        </div>
       </div>
-      <ChatInput />
-    </div>
+
+      <div className="flex-1 overflow-y-auto px-6 py-5">
+        <div className="mx-auto flex w-full max-w-[880px] flex-col gap-5">
+          {messages.length === 0 ? (
+            <div className="shell-panel-muted flex min-h-[300px] items-center justify-center px-8 py-9 text-center">
+              <div className="max-w-xl space-y-4">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-3xl border border-primary-500/20 bg-primary-500/8 text-primary-400">
+                  <Bot size={22} />
+                </div>
+                <h3 className="text-[1.95rem] font-display font-semibold text-text-primary">
+                  Ready to work
+                </h3>
+                <p className="text-sm leading-8 text-text-secondary">
+                  {agent
+                    ? `Chatting with ${agent.name}. Use the composer below to frame the task, decision, or problem you want to work through.`
+                    : 'Select an agent from the launchpad first, then return here to start the thread.'}
+                </p>
+                {!hasUsableProvider ? (
+                  <p className="text-sm leading-7 text-warning-500">
+                    Configure a provider in Settings before sending the first message.
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          ) : (
+            messages.map((message) => (
+              <ChatMessage key={message.id} message={message} agentName={agent?.name} />
+            ))
+          )}
+
+          {streaming && !messages.some((message) => message.streaming) ? (
+            <StreamingIndicator agentName={agent?.name} />
+          ) : null}
+        </div>
+      </div>
+
+      <div className="border-t border-border-subtle bg-surface-secondary/70 px-6 py-[1.125rem]">
+        <div className="mx-auto w-full max-w-[880px]">
+          <ChatInput />
+        </div>
+      </div>
+    </section>
   );
 }

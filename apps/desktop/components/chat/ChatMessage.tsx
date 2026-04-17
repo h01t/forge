@@ -12,15 +12,23 @@ export default function ChatMessage({ message, agentName }: ChatMessageProps) {
   const displayName = isUser ? 'You' : (agentName ?? 'Assistant');
 
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
-      <div className={`${isUser ? 'message-user' : 'message-assistant'} max-w-[75%]`}>
-        <div className="msg-bubble px-4 py-3">
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className={`text-xs font-display font-semibold tracking-wider ${isUser ? 'text-secondary-400' : 'text-primary-500'}`}>
-              {displayName.toUpperCase()}
-            </span>
-          </div>
-          <div className={`text-sm text-text-primary whitespace-pre-wrap leading-relaxed ${message.streaming ? 'typing-cursor' : ''}`}>
+    <div className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'}`}>
+      <div className={`max-w-[68%] min-w-0 ${isUser ? 'message-user' : 'message-assistant'}`}>
+        <div className="mb-2 flex items-center gap-2 px-1">
+          <span
+            className={`text-[10px] font-display font-semibold uppercase tracking-[0.17em] ${
+              isUser ? 'text-secondary-400' : 'text-primary-400'
+            }`}
+          >
+            {displayName}
+          </span>
+        </div>
+        <div className="msg-bubble px-4.5 py-3.5">
+          <div
+            className={`whitespace-pre-wrap break-words text-[14.5px] leading-7 text-text-primary ${
+              message.streaming ? 'typing-cursor' : ''
+            }`}
+          >
             {message.content || (message.streaming ? '' : '(empty)')}
           </div>
         </div>

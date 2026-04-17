@@ -1,19 +1,12 @@
 'use client';
 
 import { useSyncExternalStore, useState } from 'react';
-
-function isTauri(): boolean {
-  return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
-}
+import { isTauriDesktop } from '@/lib/platform';
 
 const emptySubscribe = () => () => {};
 
 export default function TauriGuard({ children }: { children: React.ReactNode }) {
-  const inTauri = useSyncExternalStore(
-    emptySubscribe,
-    () => isTauri(),   // client snapshot
-    () => true,         // server snapshot — no banner during SSR
-  );
+  const inTauri = useSyncExternalStore(emptySubscribe, isTauriDesktop, () => true);
   const [dismissed, setDismissed] = useState(false);
 
   if (inTauri || dismissed) {

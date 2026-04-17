@@ -2,18 +2,21 @@
 
 export default function StreamingIndicator({ agentName }: { agentName?: string }) {
   return (
-    <div className="flex justify-start mb-4">
-      <div className="message-assistant max-w-[75%]">
-        <div className="msg-bubble px-4 py-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-display font-semibold tracking-wider text-primary-500">
-              {(agentName ?? 'ASSISTANT').toUpperCase()}
-            </span>
+    <div className="flex w-full justify-start">
+      <div className="message-assistant max-w-[68%] min-w-0">
+        <div className="mb-2 flex items-center gap-2 px-1">
+          <span className="text-[10px] font-display font-semibold uppercase tracking-[0.17em] text-primary-400">
+            {(agentName ?? 'Assistant').toUpperCase()}
+          </span>
+        </div>
+        <div className="msg-bubble px-4.5 py-3.5">
+          <div className="flex items-center gap-3">
             <div className="loading-dots">
               <span />
               <span />
               <span />
             </div>
+            <span className="text-sm text-text-secondary">Thinking through the response…</span>
           </div>
         </div>
       </div>
