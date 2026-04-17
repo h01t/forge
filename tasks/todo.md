@@ -1,5 +1,14 @@
 # Tasks
 
+## Stabilization Pass — COMPLETE
+
+- [x] Normalize stored message roles and repair legacy quoted values via migration
+- [x] Remove build-time Google Font dependency for offline/restricted builds
+- [x] Fix chat composer provider resolution without effect-driven derived state
+- [x] Mark planned providers in shared metadata and reflect that state in Settings/chat UI
+- [x] Clean repo hygiene issues (`package-lock.json`, generated lint targets, ignore rules)
+- [x] Align top-level docs with the actual stack and current implementation status
+
 ## Phase 2: Agent System — COMPLETE
 
 - [x] Pre-compile agent YAML → browser-safe static exports (`agents-data.ts` + `browser.ts` entry)

@@ -24,6 +24,10 @@
   --color-border-subtle: #1f1f2a;
   --color-border-highlight: #3a3a4a;
 
+  --font-inter-stack: 'Segoe UI', 'Helvetica Neue', Arial, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-fira-code-stack: 'SFMono-Regular', 'SF Mono', 'JetBrains Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  --font-display-stack: 'Orbitron', 'Exo 2', 'Avenir Next', 'Segoe UI', sans-serif;
+
   --glow-cyan: rgba(0, 240, 255, 0.3);
   --glow-magenta: rgba(255, 0, 255, 0.3);
   --glow-green: rgba(57, 255, 20, 0.3);
@@ -109,9 +113,9 @@
   --color-border-highlight: var(--color-border-highlight);
 
   /* Fonts */
-  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'Fira Code', 'JetBrains Mono', Consolas, Monaco, monospace;
-  --font-display: 'Orbitron', 'Exo 2', system-ui, sans-serif;
+  --font-sans: var(--font-inter-stack);
+  --font-mono: var(--font-fira-code-stack);
+  --font-display: var(--font-display-stack);
 }
 
 * {

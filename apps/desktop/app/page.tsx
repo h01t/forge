@@ -11,7 +11,7 @@ const agentMeta: Record<string, { icon: string; color: string }> = {
 };
 
 export default function Home() {
-  const { init, activeProvider, providers } = useSettingsStore();
+  const { init, activeProvider, getFirstUsableProvider, isProviderUsable } = useSettingsStore();
   const { agents, init: initAgents } = useAgentStore();
 
   useEffect(() => {
@@ -19,7 +19,8 @@ export default function Home() {
     initAgents();
   }, [init, initAgents]);
 
-  const hasConfiguredProvider = activeProvider && providers[activeProvider]?.credential !== null;
+  const hasConfiguredProvider =
+    isProviderUsable(activeProvider) || getFirstUsableProvider() !== null;
 
   return (
     <div className="flex h-full w-full">

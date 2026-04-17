@@ -30,6 +30,7 @@ Thumbs.db
 
 # Tauri
 src-tauri/target/
+apps/desktop/src-tauri/target/
 src-tauri/Cargo.lock
 
 # Logs
@@ -45,6 +46,7 @@ coverage/
 # Temporary
 *.tmp
 .cache/
+apps/desktop/package-lock.json
 
 # AGENT.md
 AGENT.md

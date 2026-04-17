@@ -2,7 +2,7 @@ use crate::llm::types::*;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions};
-use sqlx::{Row, Sqlite};
+use sqlx::Row;
 use std::path::PathBuf;
 use std::str::FromStr;
 
@@ -58,6 +58,12 @@ pub struct Settings {
 /// Storage manager for SQLite database
 pub struct StorageManager {
     pool: SqlitePool,
+}
+
+fn normalize_message_role(raw_role: &str) -> Result<String, StorageError> {
+    MessageRole::from_persisted_str(raw_role)
+        .map(|role| role.as_str().to_string())
+        .ok_or_else(|| StorageError::InvalidData(format!("Invalid message role: {}", raw_role)))
 }
 
 impl StorageManager {
@@ -229,7 +235,7 @@ impl StorageManager {
         )
         .bind(&id)
         .bind(conversation_id)
-        .bind(serde_json::to_string(&message.role)?)
+        .bind(message.role.as_str())
         .bind(&message.content)
         .bind(&now.to_rfc3339())
         .bind(tool_calls_json)
@@ -265,7 +271,7 @@ impl StorageManager {
                 Ok(StoredMessage {
                     id: row.get("id"),
                     conversation_id: row.get("conversation_id"),
-                    role: row.get("role"),
+                    role: normalize_message_role(&row.get::<String, _>("role"))?,
                     content: row.get("content"),
                     created_at: DateTime::from_str(&row.get::<String, _>("created_at")).unwrap(),
                     tool_calls: row.get("tool_calls"),
@@ -313,5 +319,114 @@ impl StorageManager {
             .into_iter()
             .map(|row| (row.get("key"), row.get("value")))
             .collect())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_db_path(name: &str) -> PathBuf {
+        std::env::temp_dir().join(format!(
+            "pantheon-forge-storage-{}-{}.db",
+            name,
+            uuid::Uuid::new_v4()
+        ))
+    }
+
+    #[test]
+    fn normalize_message_role_accepts_canonical_and_legacy_values() {
+        assert_eq!(normalize_message_role("user").unwrap(), "user");
+        assert_eq!(normalize_message_role("\"assistant\"").unwrap(), "assistant");
+        assert_eq!(normalize_message_role(" tool ").unwrap(), "tool");
+        assert!(normalize_message_role("invalid").is_err());
+    }
+
+    #[tokio::test]
+    async fn add_message_persists_canonical_roles() {
+        let db_path = test_db_path("canonical-role");
+        let manager = StorageManager::new(db_path.clone()).await.unwrap();
+        let conversation = manager
+            .create_conversation("software-engineer", "Canonical role test")
+            .await
+            .unwrap();
+
+        manager
+            .add_message(
+                &conversation.id,
+                &Message {
+                    role: MessageRole::User,
+                    content: "hello".into(),
+                    tool_calls: None,
+                    tool_call_id: None,
+                },
+            )
+            .await
+            .unwrap();
+
+        let stored_role = sqlx::query_scalar::<_, String>(
+            "SELECT role FROM messages WHERE conversation_id = ?",
+        )
+        .bind(&conversation.id)
+        .fetch_one(&manager.pool)
+        .await
+        .unwrap();
+
+        assert_eq!(stored_role, "user");
+
+        drop(manager);
+        std::fs::remove_file(db_path).ok();
+    }
+
+    #[tokio::test]
+    async fn get_messages_normalizes_legacy_quoted_roles() {
+        let db_path = test_db_path("legacy-role");
+        let manager = StorageManager::new(db_path.clone()).await.unwrap();
+        let conversation = manager
+            .create_conversation("software-engineer", "Legacy role test")
+            .await
+            .unwrap();
+
+        sqlx::query(
+            "INSERT INTO messages (id, conversation_id, role, content, created_at)
+             VALUES (?, ?, ?, ?, ?)",
+        )
+        .bind("msg-1")
+        .bind(&conversation.id)
+        .bind("\"assistant\"")
+        .bind("legacy payload")
+        .bind("2025-01-01T00:00:00Z")
+        .execute(&manager.pool)
+        .await
+        .unwrap();
+
+        sqlx::query(include_str!("../../migrations/20250101000003_fix_message_roles.sql"))
+            .execute(&manager.pool)
+            .await
+            .unwrap();
+
+        let migrated_role = sqlx::query_scalar::<_, String>(
+            "SELECT role FROM messages WHERE id = 'msg-1'",
+        )
+        .fetch_one(&manager.pool)
+        .await
+        .unwrap();
+
+        sqlx::query(
+            "UPDATE messages SET role = ? WHERE id = ?",
+        )
+        .bind("\"assistant\"")
+        .bind("msg-1")
+        .execute(&manager.pool)
+        .await
+        .unwrap();
+
+        let messages = manager.get_messages(&conversation.id).await.unwrap();
+
+        assert_eq!(messages[0].role, "assistant");
+        assert_eq!(migrated_role, "assistant");
+
+        drop(manager);
+        std::fs::remove_file(db_path).ok();
     }
 }

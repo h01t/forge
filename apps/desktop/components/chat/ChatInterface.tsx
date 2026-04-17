@@ -13,7 +13,9 @@ interface ChatInterfaceProps {
 
 export default function ChatInterface({ agent }: ChatInterfaceProps) {
   const { messages, streaming } = useChatStore();
-  const { activeProvider } = useSettingsStore();
+  const { activeProvider, getFirstUsableProvider, isProviderUsable } = useSettingsStore();
+  const hasUsableProvider =
+    isProviderUsable(activeProvider) || getFirstUsableProvider() !== null;
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -36,7 +38,7 @@ export default function ChatInterface({ agent }: ChatInterfaceProps) {
                 {agent
                   ? `Chatting with ${agent.name}. Type a message below.`
                   : 'Select an agent from the home page, then type a message.'}
-                {!activeProvider && (
+                {!hasUsableProvider && (
                   <span className="block mt-2 text-warning-500 text-xs">
                     Configure a provider in Settings first.
                   </span>

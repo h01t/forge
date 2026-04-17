@@ -45,6 +45,37 @@ pub enum MessageRole {
     Tool,
 }
 
+impl MessageRole {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            MessageRole::System => "system",
+            MessageRole::User => "user",
+            MessageRole::Assistant => "assistant",
+            MessageRole::Tool => "tool",
+        }
+    }
+
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s.trim().to_lowercase().as_str() {
+            "system" => Some(MessageRole::System),
+            "user" => Some(MessageRole::User),
+            "assistant" => Some(MessageRole::Assistant),
+            "tool" => Some(MessageRole::Tool),
+            _ => None,
+        }
+    }
+
+    pub fn from_persisted_str(s: &str) -> Option<Self> {
+        let trimmed = s.trim();
+        let normalized = trimmed
+            .strip_prefix('"')
+            .and_then(|value| value.strip_suffix('"'))
+            .unwrap_or(trimmed);
+
+        Self::from_str(normalized)
+    }
+}
+
 /// A chat message
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Message {

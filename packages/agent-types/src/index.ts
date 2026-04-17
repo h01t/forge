@@ -1,4 +1,5 @@
 export type ProviderId = 'anthropic' | 'openai' | 'google' | 'deepseek' | 'ollama';
+export type ProviderStatus = 'available' | 'planned';
 
 export type MessageRole = 'system' | 'user' | 'assistant' | 'tool';
 
@@ -70,12 +71,44 @@ export interface StoredMessage {
   tool_call_id?: string;
 }
 
-export const PROVIDERS: { id: ProviderId; name: string; defaultModel: string }[] = [
-  { id: 'anthropic', name: 'Anthropic', defaultModel: 'claude-3-5-sonnet-20241022' },
-  { id: 'openai', name: 'OpenAI', defaultModel: 'gpt-4o' },
-  { id: 'google', name: 'Google', defaultModel: 'gemini-2.0-flash-exp' },
-  { id: 'deepseek', name: 'DeepSeek', defaultModel: 'deepseek-chat' },
-  { id: 'ollama', name: 'Ollama', defaultModel: 'llama3.2' },
+export interface ProviderDefinition {
+  id: ProviderId;
+  name: string;
+  defaultModel: string;
+  status: ProviderStatus;
+}
+
+export const PROVIDERS: ProviderDefinition[] = [
+  {
+    id: 'anthropic',
+    name: 'Anthropic',
+    defaultModel: 'claude-3-5-sonnet-20241022',
+    status: 'available',
+  },
+  {
+    id: 'openai',
+    name: 'OpenAI',
+    defaultModel: 'gpt-4o',
+    status: 'available',
+  },
+  {
+    id: 'google',
+    name: 'Google',
+    defaultModel: 'gemini-2.0-flash-exp',
+    status: 'planned',
+  },
+  {
+    id: 'deepseek',
+    name: 'DeepSeek',
+    defaultModel: 'deepseek-chat',
+    status: 'available',
+  },
+  {
+    id: 'ollama',
+    name: 'Ollama',
+    defaultModel: 'llama3.2',
+    status: 'planned',
+  },
 ];
 
 export interface LLMProviderConfig {

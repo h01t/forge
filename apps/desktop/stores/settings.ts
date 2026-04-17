@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ProviderId, ProviderCredential } from '@/lib/tauri';
+import { PROVIDERS, type ProviderCredential, type ProviderId } from '@/lib/tauri';
 import {
   storeProviderCredentials,
   getProviderCredentials,
@@ -9,6 +9,14 @@ import {
   setSetting,
   getAllSettings,
 } from '@/lib/tauri';
+
+const availableProviderIds = new Set(
+  PROVIDERS.filter((provider) => provider.status === 'available').map((provider) => provider.id),
+);
+
+function isAvailableProvider(providerId: ProviderId | null | undefined): providerId is ProviderId {
+  return providerId !== null && providerId !== undefined && availableProviderIds.has(providerId);
+}
 
 interface ProviderState {
   credential: ProviderCredential | null;
@@ -31,6 +39,10 @@ interface SettingsState {
   loadSetting: (key: string) => Promise<string | null>;
   saveSetting: (key: string, value: string) => Promise<void>;
   loadAllSettings: () => Promise<void>;
+  isProviderAvailable: (providerId: ProviderId | null | undefined) => boolean;
+  isProviderConfigured: (providerId: ProviderId | null | undefined) => boolean;
+  isProviderUsable: (providerId: ProviderId | null | undefined) => boolean;
+  getFirstUsableProvider: () => ProviderId | null;
 }
 
 const initialProviders: Record<ProviderId, ProviderState> = {
@@ -57,6 +69,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       ]);
       const providers = { ...get().providers };
       for (const id of storedIds) {
+        if (!isAvailableProvider(id as ProviderId)) {
+          continue;
+        }
         try {
           const cred = await getProviderCredentials(id as ProviderId);
           providers[id as ProviderId] = { credential: cred, loading: false, error: null };
@@ -64,7 +79,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           // ignore
         }
       }
-      const activeProvider = (allSettings['active_provider'] as ProviderId) ?? null;
+      const storedActiveProvider = (allSettings['active_provider'] as ProviderId) ?? null;
+      const activeProvider = isAvailableProvider(storedActiveProvider)
+        ? storedActiveProvider
+        : null;
       set({ providers, settings: allSettings, activeProvider, loading: false });
     } catch (e) {
       set({ error: String(e), loading: false });
@@ -72,6 +90,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 
   loadProvider: async (providerId) => {
+    if (!isAvailableProvider(providerId)) {
+      return null;
+    }
     set((s) => ({
       providers: {
         ...s.providers,
@@ -100,6 +121,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   saveProvider: async (credential) => {
     const providerId = credential.provider_id;
+    if (!isAvailableProvider(providerId)) {
+      throw new Error(`Provider ${providerId} is planned but not implemented yet.`);
+    }
     set((s) => ({
       providers: {
         ...s.providers,
@@ -126,6 +150,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 
   removeProvider: async (providerId) => {
+    if (!isAvailableProvider(providerId)) {
+      return;
+    }
     try {
       await removeProviderCredentials(providerId);
       set((s) => ({
@@ -145,6 +172,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 
   setActiveProvider: (providerId) => {
+    if (!isAvailableProvider(providerId)) {
+      return;
+    }
     set({ activeProvider: providerId });
     setSetting('active_provider', providerId).catch(() => {});
   },
@@ -173,5 +203,32 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     } catch (e) {
       set({ error: String(e) });
     }
+  },
+
+  isProviderAvailable: (providerId) => isAvailableProvider(providerId),
+
+  isProviderConfigured: (providerId) => {
+    if (!providerId) {
+      return false;
+    }
+
+    return get().providers[providerId]?.credential !== null;
+  },
+
+  isProviderUsable: (providerId) => {
+    if (!providerId) {
+      return false;
+    }
+
+    return get().isProviderAvailable(providerId) && get().isProviderConfigured(providerId);
+  },
+
+  getFirstUsableProvider: () => {
+    const providers = get().providers;
+    return (
+      PROVIDERS.find(
+        (provider) => provider.status === 'available' && providers[provider.id]?.credential !== null,
+      )?.id ?? null
+    );
   },
 }));

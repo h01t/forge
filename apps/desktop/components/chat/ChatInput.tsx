@@ -10,24 +10,26 @@ export default function ChatInput() {
   const [input, setInput] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { sendMessage, streaming } = useChatStore();
-  const { activeProvider, providers } = useSettingsStore();
+  const {
+    activeProvider,
+    providers,
+    getFirstUsableProvider,
+    isProviderConfigured,
+    isProviderUsable,
+  } = useSettingsStore();
   const { currentAgent } = useAgentStore();
 
   const agentPref = currentAgent?.llmPreference as ProviderId | undefined;
-  const defaultProvider = (agentPref && providers[agentPref]?.credential)
-    ? agentPref
-    : activeProvider;
-
   const [selectedProvider, setSelectedProvider] = useState<ProviderId | null>(null);
-  const resolvedProvider = selectedProvider ?? defaultProvider;
-
-  useEffect(() => {
-    if (!selectedProvider && defaultProvider) {
-      setSelectedProvider(defaultProvider);
-    }
-  }, [defaultProvider, selectedProvider]);
-
-  const hasProvider = resolvedProvider && providers[resolvedProvider]?.credential !== null;
+  const selectedUsableProvider =
+    selectedProvider && isProviderUsable(selectedProvider) ? selectedProvider : null;
+  const agentPreferredProvider =
+    agentPref && isProviderUsable(agentPref) ? agentPref : null;
+  const fallbackProvider =
+    (activeProvider && isProviderUsable(activeProvider) ? activeProvider : null) ??
+    getFirstUsableProvider();
+  const resolvedProvider = selectedUsableProvider ?? agentPreferredProvider ?? fallbackProvider;
+  const hasProvider = resolvedProvider !== null;
   const model = resolvedProvider
     ? providers[resolvedProvider]?.credential?.model ??
       PROVIDERS.find((p) => p.id === resolvedProvider)?.defaultModel
@@ -64,23 +66,36 @@ export default function ChatInput() {
           <span className="text-[10px] text-text-muted uppercase tracking-widest font-display">Model</span>
           <div className="flex gap-1 flex-wrap">
             {PROVIDERS.map((p) => {
-              const configured = providers[p.id]?.credential !== null;
+              const configured = isProviderConfigured(p.id);
+              const selectable = p.status === 'available' && configured;
               const isSelected = resolvedProvider === p.id;
+              const title = p.status === 'planned'
+                ? `${p.name} — planned integration`
+                : configured
+                  ? `${p.name} (${p.defaultModel})`
+                  : `${p.name} — configure credentials in Settings`;
               return (
                 <button
                   key={p.id}
-                  onClick={() => setSelectedProvider(p.id)}
-                  disabled={!configured}
+                  onClick={() => {
+                    if (selectable) {
+                      setSelectedProvider(p.id);
+                    }
+                  }}
+                  disabled={!selectable}
                   className={`px-2.5 py-0.5 text-xs rounded-sm transition-all font-display ${
                     isSelected
                       ? 'bg-primary-500/20 text-primary-400 border border-primary-500/40'
-                      : configured
+                      : selectable
                         ? 'text-text-tertiary hover:text-text-secondary border border-transparent hover:border-border-default'
-                        : 'text-text-muted/30 border border-transparent cursor-not-allowed'
+                        : p.status === 'planned'
+                          ? 'text-warning-500/70 border border-warning-500/20 cursor-not-allowed'
+                          : 'text-text-muted/30 border border-transparent cursor-not-allowed'
                   }`}
-                  title={configured ? `${p.name} (${p.defaultModel})` : `${p.name} — not configured`}
+                  title={title}
                 >
-                  {p.name}
+                  <span>{p.name}</span>
+                  {p.status === 'planned' && <span className="ml-1 text-[9px]">PLANNED</span>}
                 </button>
               );
             })}
