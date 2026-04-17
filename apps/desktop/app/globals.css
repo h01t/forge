@@ -366,18 +366,16 @@ body {
 }
 
 /* Message Bubbles */
-.message-user {
-  background: var(--color-surface-elevated);
-  border: 1px solid var(--color-border-highlight);
-  border-radius: 12px 12px 4px 12px;
-  margin-left: 2rem;
+.message-user .msg-bubble {
+  background: rgba(0, 240, 255, 0.08);
+  border: 1px solid rgba(0, 240, 255, 0.15);
+  border-radius: 16px 16px 4px 16px;
 }
 
-.message-assistant {
-  background: linear-gradient(135deg, var(--color-surface-tertiary), var(--color-surface-secondary));
-  border: 1px solid var(--color-primary-600);
-  border-radius: 12px 12px 12px 4px;
-  margin-right: 2rem;
+.message-assistant .msg-bubble {
+  background: var(--color-surface-tertiary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 16px 16px 16px 4px;
 }
 
 /* Agent Selection */

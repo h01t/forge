@@ -9,16 +9,21 @@ interface ChatMessageProps {
 
 export default function ChatMessage({ message, agentName }: ChatMessageProps) {
   const isUser = message.role === 'user';
+  const displayName = isUser ? 'You' : (agentName ?? 'Assistant');
 
   return (
-    <div className={`${isUser ? 'message-user' : 'message-assistant'} p-4 max-w-3xl`}>
-      <div className="flex items-center gap-3 mb-2">
-        <span className="text-sm font-display text-primary-500">
-          {isUser ? 'YOU' : (agentName ?? 'ASSISTANT').toUpperCase()}
-        </span>
-      </div>
-      <div className={`text-text-secondary whitespace-pre-wrap ${message.streaming ? 'typing-cursor' : ''}`}>
-        {message.content || (message.streaming ? '' : '(empty)')}
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
+      <div className={`${isUser ? 'message-user' : 'message-assistant'} max-w-[75%]`}>
+        <div className="msg-bubble px-4 py-3">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className={`text-xs font-display font-semibold tracking-wider ${isUser ? 'text-secondary-400' : 'text-primary-500'}`}>
+              {displayName.toUpperCase()}
+            </span>
+          </div>
+          <div className={`text-sm text-text-primary whitespace-pre-wrap leading-relaxed ${message.streaming ? 'typing-cursor' : ''}`}>
+            {message.content || (message.streaming ? '' : '(empty)')}
+          </div>
+        </div>
       </div>
     </div>
   );

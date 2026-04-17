@@ -12,6 +12,20 @@ interface ConversationListProps {
   onNew: () => void;
 }
 
+function relativeTime(dateStr: string): string {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diffMs = now - then;
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay < 7) return `${diffDay}d ago`;
+  return new Date(dateStr).toLocaleDateString();
+}
+
 export default function ConversationList({
   conversations,
   activeId,
@@ -25,26 +39,29 @@ export default function ConversationList({
     const agent = agents.find((a) => a.id === agentId);
     return agent?.name ?? agentId;
   };
+
   return (
-    <aside className="w-72 bg-surface-secondary border-r border-border-default flex flex-col">
+    <aside className="w-72 bg-surface-secondary border-r border-border-default flex flex-col shrink-0">
       <div className="p-4 border-b border-border-default">
-        <h2 className="text-lg font-display font-bold text-primary-500 text-glow-cyan tracking-wider">
-          PANTHEON FORGE
-        </h2>
+        <Link href="/" className="block">
+          <h2 className="text-sm font-display font-bold text-primary-500 text-glow-cyan tracking-widest">
+            PANTHEON FORGE
+          </h2>
+        </Link>
       </div>
 
-      <div className="p-3">
+      <div className="px-3 pt-3 pb-2">
         <button
           onClick={onNew}
-          className="w-full cyber-button text-sm py-2"
+          className="w-full cyber-button text-xs py-2"
         >
           + NEW CHAT
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 space-y-1">
+      <div className="flex-1 overflow-y-auto px-3 pb-2 space-y-0.5">
         {conversations.length === 0 ? (
-          <p className="text-xs text-text-muted text-center py-4">
+          <p className="text-xs text-text-muted text-center py-6">
             No conversations yet
           </p>
         ) : (
@@ -55,51 +72,51 @@ export default function ConversationList({
               tabIndex={0}
               onClick={() => onSelect(conv.id)}
               onKeyDown={(e) => { if (e.key === 'Enter') onSelect(conv.id); }}
-              className={`w-full p-3 rounded-lg text-left transition-all duration-200 group cursor-pointer ${
+              className={`w-full px-3 py-2.5 rounded-md text-left transition-all duration-150 group cursor-pointer ${
                 activeId === conv.id
-                  ? 'bg-surface-elevated border border-primary-500/40'
+                  ? 'bg-surface-elevated border border-primary-500/30'
                   : 'hover:bg-surface-hover border border-transparent'
               }`}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <span className="text-sm text-text-primary truncate">
-                    {conv.title}
-                  </span>
-                  {conv.agent_id && conv.agent_id !== 'default' && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary-500/20 text-primary-500 whitespace-nowrap">
-                      {getAgentName(conv.agent_id)}
-                    </span>
-                  )}
-                </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-text-primary truncate flex-1">
+                  {conv.title}
+                </span>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     onDelete(conv.id);
                   }}
-                  className="text-text-muted hover:text-error-500 opacity-0 group-hover:opacity-100 transition-opacity text-xs ml-2"
+                  className="text-text-muted/40 hover:text-error-500 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] shrink-0"
                 >
                   x
                 </button>
               </div>
-              <div className="text-xs text-text-tertiary mt-1">
-              {new Date(conv.updated_at).toLocaleDateString()}
-            </div>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-[10px] text-text-muted">
+                  {relativeTime(conv.updated_at)}
+                </span>
+                {conv.agent_id && conv.agent_id !== 'default' && (
+                  <span className="text-[9px] px-1.5 py-px rounded-sm bg-primary-500/15 text-primary-400 whitespace-nowrap font-display">
+                    {getAgentName(conv.agent_id)}
+                  </span>
+                )}
+              </div>
             </div>
           ))
         )}
       </div>
 
-      <div className="p-4 border-t border-border-default space-y-2">
+      <div className="p-3 border-t border-border-default space-y-1.5">
         <Link
           href="/settings/"
-          className="block w-full py-2 px-4 text-center cyber-button text-sm rounded-lg"
+          className="block w-full py-1.5 px-4 text-center cyber-button text-xs rounded-md"
         >
           SETTINGS
         </Link>
         <Link
           href="/"
-          className="block w-full py-2 px-4 text-center text-sm text-text-tertiary hover:text-text-primary transition-colors"
+          className="block w-full py-1.5 px-4 text-center text-xs text-text-tertiary hover:text-text-primary transition-colors"
         >
           HOME
         </Link>

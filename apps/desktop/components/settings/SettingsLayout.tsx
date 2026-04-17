@@ -30,7 +30,7 @@ export default function SettingsLayout() {
 
   return (
     <div className="flex h-full w-full">
-      <aside className="w-64 bg-surface-secondary border-r border-border-default flex flex-col">
+      <aside className="w-72 bg-surface-secondary border-r border-border-default flex flex-col">
         <div className="p-6 border-b border-border-default">
           <h1 className="text-xl font-display font-bold text-primary-500 text-glow-cyan tracking-wider">
             SETTINGS
