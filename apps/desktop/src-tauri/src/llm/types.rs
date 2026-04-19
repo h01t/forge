@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// LLM Provider ID
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -208,11 +207,22 @@ pub struct LLMConfig {
 /// Streaming event
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum StreamEvent {
-    Start { id: String },
-    Content { delta: String },
-    ToolCall { tool_call: ToolCall },
-    Done { finish_reason: Option<String>, usage: Option<Usage> },
-    Error { message: String },
+    Start {
+        id: String,
+    },
+    Content {
+        delta: String,
+    },
+    ToolCall {
+        tool_call: ToolCall,
+    },
+    Done {
+        finish_reason: Option<String>,
+        usage: Option<Usage>,
+    },
+    Error {
+        message: String,
+    },
 }
 
 impl StreamEvent {

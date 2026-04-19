@@ -118,7 +118,10 @@ impl OpenAIProvider {
         let event_id = id.clone();
 
         // Ensure messages have system role properly
-        let has_system = request.messages.iter().any(|m| m.role == MessageRole::System);
+        let has_system = request
+            .messages
+            .iter()
+            .any(|m| m.role == MessageRole::System);
 
         let mut openai_request = OpenAIRequest {
             model: request.model,
@@ -187,7 +190,9 @@ impl OpenAIProvider {
                         })
                         .map(move |chunk| {
                             if chunk.choices.is_empty() {
-                                return StreamEvent::Content { delta: String::new() };
+                                return StreamEvent::Content {
+                                    delta: String::new(),
+                                };
                             }
 
                             let choice = &chunk.choices[0];
@@ -205,11 +210,15 @@ impl OpenAIProvider {
 
                             if let Some(ref tool_calls) = choice.delta.tool_calls {
                                 for tc in tool_calls {
-                                    return StreamEvent::ToolCall { tool_call: tc.clone() };
+                                    return StreamEvent::ToolCall {
+                                        tool_call: tc.clone(),
+                                    };
                                 }
                             }
 
-                            StreamEvent::Content { delta: String::new() }
+                            StreamEvent::Content {
+                                delta: String::new(),
+                            }
                         });
 
                     // Add start event
@@ -217,14 +226,12 @@ impl OpenAIProvider {
 
                     start.chain(stream).boxed()
                 }
-                Err(e) => {
-                    stream::once(async move {
-                        StreamEvent::Error {
-                            message: format!("Request failed: {}", e),
-                        }
-                    })
-                    .boxed()
-                }
+                Err(e) => stream::once(async move {
+                    StreamEvent::Error {
+                        message: format!("Request failed: {}", e),
+                    }
+                })
+                .boxed(),
             }
         };
 

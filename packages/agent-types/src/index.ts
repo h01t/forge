@@ -1,5 +1,7 @@
 export type ProviderId = 'anthropic' | 'openai' | 'google' | 'deepseek' | 'ollama';
 export type ProviderStatus = 'available' | 'planned';
+export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
+export type ProjectPermissionLevel = 'read';
 
 export type MessageRole = 'system' | 'user' | 'assistant' | 'tool';
 
@@ -57,8 +59,18 @@ export interface Conversation {
   id: string;
   agent_id: string;
   title: string;
+  project_access_id?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ProjectAccessGrant {
+  id: string;
+  path: string;
+  displayName: string;
+  permissionLevel: ProjectPermissionLevel;
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface StoredMessage {
@@ -129,7 +141,7 @@ export interface Tool {
   id: string;
   name: string;
   description: string;
-  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  riskLevel: RiskLevel;
   parameters?: Record<string, unknown>;
 }
 
@@ -177,7 +189,7 @@ export interface CollaborationMessage {
 export interface ToolExecutionRequest {
   toolId: string;
   parameters: Record<string, unknown>;
-  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  riskLevel: RiskLevel;
 }
 
 export interface ToolExecutionResult {
@@ -189,26 +201,73 @@ export interface ToolExecutionResult {
 
 export interface ToolApprovalRequest {
   id: string;
+  requestId: string;
+  conversationId: string;
   agentId: string;
+  toolCallId: string;
   toolId: string;
   toolName: string;
-  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  riskLevel: RiskLevel;
   parameters: Record<string, unknown>;
+  projectAccessId?: string;
+  projectDisplayName?: string;
+  projectPath?: string;
+  permissionLevel?: ProjectPermissionLevel;
   description?: string;
   timestamp: number;
 }
 
 export type ApprovalStatus = 'pending' | 'approved' | 'denied' | 'modified';
+export type ToolExecutionStatus =
+  | 'pending'
+  | 'approved'
+  | 'running'
+  | 'succeeded'
+  | 'denied'
+  | 'failed';
+
+export interface ToolApprovalDecision {
+  approvalId: string;
+  decision: 'approved' | 'denied';
+}
 
 export interface ToolExecutionLog {
   id: string;
+  conversationId: string;
+  requestId: string;
+  toolCallId: string;
   agentId: string;
   toolId: string;
   toolName: string;
   parameters: Record<string, unknown>;
-  status: ApprovalStatus;
+  riskLevel: RiskLevel;
+  projectAccessId?: string;
+  projectDisplayName?: string;
+  projectPath?: string;
+  permissionLevel?: ProjectPermissionLevel;
+  status: ToolExecutionStatus;
   result?: ToolExecutionResult;
+  error?: string;
   timestamp: number;
+  updatedAt: number;
+}
+
+export interface AgentTurnStreamPayload {
+  request_id: string;
+  event_type:
+    | 'start'
+    | 'content'
+    | 'approval_requested'
+    | 'approval_resolved'
+    | 'tool_running'
+    | 'tool_finished'
+    | 'done'
+    | 'error';
+  delta?: string;
+  finish_reason?: string;
+  error?: string;
+  approval_request?: ToolApprovalRequest;
+  tool_execution?: ToolExecutionLog;
 }
 
 export interface Settings {

@@ -19,7 +19,9 @@ struct AnthropicMessage {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 enum AnthropicContent {
-    Text { text: String },
+    Text {
+        text: String,
+    },
     Image {
         source: AnthropicImageSource,
     },
@@ -127,24 +129,61 @@ impl AnthropicProvider {
                     text: msg.content.clone(),
                 }],
             },
-            MessageRole::Assistant => AnthropicMessage {
-                role: "assistant".to_string(),
-                content: vec![AnthropicContent::Text {
-                    text: msg.content.clone(),
-                }],
-            },
+            MessageRole::Assistant => {
+                let mut content = Vec::new();
+
+                if !msg.content.is_empty() {
+                    content.push(AnthropicContent::Text {
+                        text: msg.content.clone(),
+                    });
+                }
+
+                if let Some(tool_calls) = &msg.tool_calls {
+                    content.extend(tool_calls.iter().filter_map(|tool_call| {
+                        serde_json::from_str::<serde_json::Value>(&tool_call.function.arguments)
+                            .ok()
+                            .map(|input| AnthropicContent::ToolUse {
+                                id: tool_call.id.clone(),
+                                name: tool_call.function.name.clone(),
+                                input,
+                            })
+                    }));
+                }
+
+                if content.is_empty() {
+                    content.push(AnthropicContent::Text {
+                        text: String::new(),
+                    });
+                }
+
+                AnthropicMessage {
+                    role: "assistant".to_string(),
+                    content,
+                }
+            }
             MessageRole::System => AnthropicMessage {
                 role: "user".to_string(),
                 content: vec![AnthropicContent::Text {
                     text: format!("<system>{}</system>", msg.content),
                 }],
             },
-            MessageRole::Tool => AnthropicMessage {
-                role: "user".to_string(),
-                content: vec![AnthropicContent::Text {
-                    text: format!("<tool_result>{}</tool_result>", msg.content),
-                }],
-            },
+            MessageRole::Tool => {
+                let tool_use_id = msg
+                    .tool_call_id
+                    .clone()
+                    .unwrap_or_else(|| "tool_result".to_string());
+                let is_error = msg.content.starts_with("Tool execution failed:")
+                    || msg.content == "Tool request denied by user.";
+
+                AnthropicMessage {
+                    role: "user".to_string(),
+                    content: vec![AnthropicContent::ToolResult {
+                        tool_use_id,
+                        content: msg.content.clone(),
+                        is_error: if is_error { Some(true) } else { None },
+                    }],
+                }
+            }
         }
     }
 
@@ -158,7 +197,11 @@ impl AnthropicProvider {
                 .map(|t| AnthropicTool {
                     name: t.function.name.clone(),
                     description: t.function.description.clone(),
-                    input_schema: t.function.parameters.clone().unwrap_or(serde_json::json!({})),
+                    input_schema: t
+                        .function
+                        .parameters
+                        .clone()
+                        .unwrap_or(serde_json::json!({})),
                 })
                 .collect(),
         )
@@ -353,15 +396,23 @@ impl AnthropicProvider {
                                         if let Some(ref t) = delta.delta_type {
                                             if t == "tool_use" {
                                                 // Tool use start - would need to collect full tool
-                                                StreamEvent::Content { delta: String::new() }
+                                                StreamEvent::Content {
+                                                    delta: String::new(),
+                                                }
                                             } else {
-                                                StreamEvent::Content { delta: String::new() }
+                                                StreamEvent::Content {
+                                                    delta: String::new(),
+                                                }
                                             }
                                         } else {
-                                            StreamEvent::Content { delta: String::new() }
+                                            StreamEvent::Content {
+                                                delta: String::new(),
+                                            }
                                         }
                                     } else {
-                                        StreamEvent::Content { delta: String::new() }
+                                        StreamEvent::Content {
+                                            delta: String::new(),
+                                        }
                                     }
                                 }
                                 "content_block_delta" => {
@@ -373,10 +424,14 @@ impl AnthropicProvider {
                                                 delta: partial_json,
                                             }
                                         } else {
-                                            StreamEvent::Content { delta: String::new() }
+                                            StreamEvent::Content {
+                                                delta: String::new(),
+                                            }
                                         }
                                     } else {
-                                        StreamEvent::Content { delta: String::new() }
+                                        StreamEvent::Content {
+                                            delta: String::new(),
+                                        }
                                     }
                                 }
                                 "message_stop" => StreamEvent::Done {
@@ -390,20 +445,20 @@ impl AnthropicProvider {
                                 "error" => StreamEvent::Error {
                                     message: "Anthropic stream error".to_string(),
                                 },
-                                _ => StreamEvent::Content { delta: String::new() },
+                                _ => StreamEvent::Content {
+                                    delta: String::new(),
+                                },
                             }
                         });
 
                     stream.boxed()
                 }
-                Err(e) => {
-                    stream::once(async move {
-                        StreamEvent::Error {
-                            message: format!("Request failed: {}", e),
-                        }
-                    })
-                    .boxed()
-                }
+                Err(e) => stream::once(async move {
+                    StreamEvent::Error {
+                        message: format!("Request failed: {}", e),
+                    }
+                })
+                .boxed(),
             }
         };
 

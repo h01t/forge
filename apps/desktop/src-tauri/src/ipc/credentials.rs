@@ -10,9 +10,7 @@ pub async fn store_provider_credentials(credential: ProviderCredential) -> Resul
 }
 
 #[tauri::command]
-pub async fn get_provider_credentials(
-    provider_id: String,
-) -> Result<ProviderCredential, String> {
+pub async fn get_provider_credentials(provider_id: String) -> Result<ProviderCredential, String> {
     let provider_enum = ProviderId::from_str(&provider_id)
         .ok_or_else(|| format!("Invalid provider: {}", provider_id))?;
 
@@ -26,7 +24,10 @@ pub async fn get_provider_credentials(
 pub async fn list_stored_providers() -> Result<Vec<String>, String> {
     let manager = get_credential_manager();
     let providers = manager.list_providers().map_err(|e| e.to_string())?;
-    Ok(providers.into_iter().map(|p| p.as_str().to_string()).collect())
+    Ok(providers
+        .into_iter()
+        .map(|p| p.as_str().to_string())
+        .collect())
 }
 
 #[tauri::command]

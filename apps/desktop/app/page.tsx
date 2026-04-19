@@ -6,13 +6,16 @@ import {
   ArrowRight,
   Bot,
   Code2,
+  FolderOpen,
   MessageSquareText,
   PlugZap,
   ShieldCheck,
 } from 'lucide-react';
 import AppShell from '@/components/layout/AppShell';
+import OpenProjectButton from '@/components/projects/OpenProjectButton';
 import { useAgentStore } from '@/stores/agents';
 import { useConversationsStore } from '@/stores/conversations';
+import { useProjectAccessStore } from '@/stores/project-access';
 import { useSettingsStore } from '@/stores/settings';
 import { PROVIDERS } from '@/lib/tauri';
 
@@ -53,6 +56,7 @@ const agentMeta: Record<
 export default function Home() {
   const { agents } = useAgentStore();
   const { conversations, loadConversations } = useConversationsStore();
+  const { starterProjectId, setStarterProjectId, getGrantById } = useProjectAccessStore();
   const { activeProvider, getFirstUsableProvider, isProviderUsable, providers } = useSettingsStore();
 
   useEffect(() => {
@@ -64,6 +68,7 @@ export default function Home() {
   const configuredProviderCount = PROVIDERS.filter(
     (provider) => provider.status === 'available' && providers[provider.id]?.credential !== null,
   ).length;
+  const starterProjectGrant = getGrantById(starterProjectId);
   const recentConversations = conversations.slice(0, 4);
   const getAgentName = (agentId: string) => {
     const agent = agents.find((item) => item.id === agentId);
@@ -96,6 +101,13 @@ export default function Home() {
                 Open Chat
                 <ArrowRight size={16} />
               </Link>
+              <OpenProjectButton
+                label="Open Project"
+                onGranted={async (grant) => {
+                  await setStarterProjectId(grant.id);
+                }}
+                className="inline-flex items-center gap-2 rounded-2xl border border-border-highlight bg-surface-secondary px-5 py-3 text-sm text-text-primary transition-all duration-200 hover:border-primary-500/40 hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-40"
+              />
               <Link
                 href="/settings/"
                 className="inline-flex items-center gap-2 rounded-2xl border border-border-highlight bg-surface-secondary px-5 py-3 text-sm text-text-primary transition-all duration-200 hover:border-primary-500/40 hover:bg-surface-hover"
@@ -134,14 +146,24 @@ export default function Home() {
 
             <div className="shell-panel-muted space-y-3 px-6 py-6 sm:col-span-2">
               <div className="flex items-center gap-2 text-primary-400">
-                <MessageSquareText size={16} />
+                {starterProjectGrant ? <FolderOpen size={16} /> : <MessageSquareText size={16} />}
                 <span className="shell-kicker">Current State</span>
               </div>
-              <p className="text-sm leading-7 text-text-secondary">
-                {hasConfiguredProvider
-                  ? 'You have at least one usable provider configured. Pick an agent below and move directly into chat.'
-                  : 'No usable provider is configured yet. Set up a gateway first, then launch straight into an agent workspace.'}
-              </p>
+              <div className="space-y-2 text-sm leading-7 text-text-secondary">
+                <p>
+                  {hasConfiguredProvider
+                    ? 'You have at least one usable provider configured. Pick an agent below and move directly into chat.'
+                    : 'No usable provider is configured yet. Set up a gateway first, then launch straight into an agent workspace.'}
+                </p>
+                {starterProjectGrant ? (
+                  <p>
+                    Starter project: <span className="text-text-primary">{starterProjectGrant.displayName}</span>{' '}
+                    with read-only access for the next new conversation.
+                  </p>
+                ) : (
+                  <p>No starter project is selected yet. Open a project if you want file tools available in the next thread.</p>
+                )}
+              </div>
             </div>
           </div>
         </section>

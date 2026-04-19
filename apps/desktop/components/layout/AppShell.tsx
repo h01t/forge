@@ -18,6 +18,7 @@ import { useIsTauriDesktop } from '@/lib/platform';
 import { PROVIDERS } from '@/lib/tauri';
 import { useMediaQuery } from '@/lib/useMediaQuery';
 import { useAgentStore } from '@/stores/agents';
+import { useProjectAccessStore } from '@/stores/project-access';
 import { useSettingsStore } from '@/stores/settings';
 import { useShellStore } from '@/stores/shell';
 
@@ -68,12 +69,14 @@ export default function AppShell({
   const isAutoCompact = useMediaQuery('(max-width: 1279px)');
   const { railMode, toggleRailMode } = useShellStore();
   const { init: initSettings, providers } = useSettingsStore();
+  const { init: initProjectAccess } = useProjectAccessStore();
   const { agents, init: initAgents } = useAgentStore();
 
   useEffect(() => {
     initSettings();
+    initProjectAccess();
     initAgents();
-  }, [initAgents, initSettings]);
+  }, [initAgents, initProjectAccess, initSettings]);
 
   const configuredProviders = PROVIDERS.filter(
     (provider) => provider.status === 'available' && providers[provider.id]?.credential !== null,

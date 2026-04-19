@@ -83,7 +83,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const activeProvider = isAvailableProvider(storedActiveProvider)
         ? storedActiveProvider
         : null;
-      set({ providers, settings: allSettings, activeProvider, loading: false });
+      set({
+        providers,
+        settings: allSettings,
+        activeProvider,
+        loading: false,
+      });
     } catch (e) {
       set({ error: String(e), loading: false });
     }
@@ -183,7 +188,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     try {
       const value = await getSetting(key);
       if (value !== null) {
-        set((s) => ({ settings: { ...s.settings, [key]: value } }));
+        set((s) => ({
+          settings: { ...s.settings, [key]: value },
+        }));
       }
       return value;
     } catch {
@@ -193,13 +200,17 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   saveSetting: async (key, value) => {
     await setSetting(key, value);
-    set((s) => ({ settings: { ...s.settings, [key]: value } }));
+    set((s) => ({
+      settings: { ...s.settings, [key]: value },
+    }));
   },
 
   loadAllSettings: async () => {
     try {
       const allSettings = await getAllSettings();
-      set({ settings: allSettings });
+      set({
+        settings: allSettings,
+      });
     } catch (e) {
       set({ error: String(e) });
     }

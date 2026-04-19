@@ -3,14 +3,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, CheckCircle2, Sparkles } from 'lucide-react';
 import { useChatStore } from '@/stores/chat';
+import { useProjectAccessStore } from '@/stores/project-access';
 import { useSettingsStore } from '@/stores/settings';
 import { useAgentStore } from '@/stores/agents';
 import { PROVIDERS, type ProviderId } from '@/lib/tauri';
 
+const TOOL_ENABLED_IDS = new Set(['read-file', 'search-files']);
+
 export default function ChatInput() {
   const [input, setInput] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { sendMessage, streaming } = useChatStore();
+  const { conversation, sendMessage, streaming } = useChatStore();
   const {
     activeProvider,
     providers,
@@ -18,6 +21,7 @@ export default function ChatInput() {
     isProviderConfigured,
     isProviderUsable,
   } = useSettingsStore();
+  const { starterProjectId, getGrantById } = useProjectAccessStore();
   const { currentAgent } = useAgentStore();
 
   const agentPref = currentAgent?.llmPreference as ProviderId | undefined;
@@ -41,6 +45,17 @@ export default function ChatInput() {
   const activeRouteTitle = resolvedProvider
     ? `${resolvedProviderMeta?.name ?? 'Provider'} — ${model ?? 'No model configured'}`
     : 'Configure a usable provider in Settings to send messages.';
+  const projectGrant = getGrantById(
+    conversation?.project_access_id ?? starterProjectId,
+  );
+  const toolReady =
+    Boolean(projectGrant) &&
+    (currentAgent?.tools ?? []).some((tool) => TOOL_ENABLED_IDS.has(tool.id));
+  const toolMessage = toolReady
+    ? `Read-only file tools are available inside ${projectGrant?.displayName ?? 'the selected project'}.`
+    : (currentAgent?.tools ?? []).some((tool) => TOOL_ENABLED_IDS.has(tool.id))
+      ? 'Open a project to enable read-only file tools for this specialist.'
+      : 'This routing surface is chat-only for the current specialist.';
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -112,6 +127,7 @@ export default function ChatInput() {
               );
             })}
           </div>
+          <p className="text-xs leading-6 text-text-muted">{toolMessage}</p>
         </div>
 
         <div
@@ -122,12 +138,12 @@ export default function ChatInput() {
             <CheckCircle2 size={14} />
             <span className="shell-kicker text-accent-500">Active Route</span>
           </div>
-          <p className="mt-2 text-[0.95rem] font-semibold text-text-primary">
+          <p className="mt-2 text-sm font-semibold text-text-primary">
             {resolvedProvider ? resolvedProviderMeta?.name : 'No provider'}
           </p>
           <p
             title={resolvedProvider ? model : undefined}
-            className="mt-1 max-w-full truncate text-[11px] leading-5 text-text-secondary"
+            className="mt-1 max-w-full truncate text-[10px] leading-5 text-text-secondary"
           >
             {resolvedProvider ? model : 'Configure a usable provider in Settings to send messages.'}
           </p>

@@ -60,8 +60,7 @@ pub fn decrypt(encrypted: &EncryptedData, key: &[u8; KEY_SIZE]) -> Result<String
         .decrypt(nonce, ciphertext.as_ref())
         .map_err(|e| CryptoError::DecryptionError(e.to_string()))?;
 
-    String::from_utf8(plaintext)
-        .map_err(|e| CryptoError::DecryptionError(e.to_string()))
+    String::from_utf8(plaintext).map_err(|e| CryptoError::DecryptionError(e.to_string()))
 }
 
 /// Generate a random encryption key

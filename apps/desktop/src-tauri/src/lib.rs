@@ -5,13 +5,18 @@ mod crypto;
 mod ipc;
 mod llm;
 mod storage;
+mod tools;
 
+use std::collections::HashMap;
 use std::sync::Arc;
 use storage::StorageManager;
 use tauri::Manager;
+use tokio::sync::{oneshot, Mutex};
 
 pub struct AppState {
     pub storage: Arc<StorageManager>,
+    pub pending_approvals:
+        Arc<Mutex<HashMap<String, oneshot::Sender<ipc::tools::ToolApprovalDecisionPayload>>>>,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -25,8 +30,11 @@ pub fn run() {
                         .build(),
                 )?;
             }
+            app.handle().plugin(tauri_plugin_dialog::init())?;
 
-            let app_data_dir = app.path().app_data_dir()
+            let app_data_dir = app
+                .path()
+                .app_data_dir()
                 .expect("Failed to resolve app data directory");
             std::fs::create_dir_all(&app_data_dir).ok();
             let db_path = app_data_dir.join("pantheon-forge.db");
@@ -37,7 +45,10 @@ pub fn run() {
                     .expect("Failed to initialize storage"),
             );
 
-            app.manage(AppState { storage });
+            app.manage(AppState {
+                storage,
+                pending_approvals: Arc::new(Mutex::new(HashMap::new())),
+            });
 
             Ok(())
         })
@@ -59,6 +70,13 @@ pub fn run() {
             ipc::settings::get_setting,
             ipc::settings::set_setting,
             ipc::settings::get_all_settings,
+            ipc::project_access::list_project_access_grants,
+            ipc::project_access::save_project_access_grant,
+            ipc::project_access::revoke_project_access_grant,
+            ipc::project_access::attach_project_access_to_conversation,
+            ipc::tools::run_agent_turn,
+            ipc::tools::respond_to_tool_approval,
+            ipc::tools::list_tool_executions,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

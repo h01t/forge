@@ -1,5 +1,5 @@
 use crate::llm::Message;
-use crate::storage::{self, StorageManager};
+use crate::storage;
 use crate::AppState;
 use tauri::State;
 
@@ -7,11 +7,12 @@ use tauri::State;
 pub async fn create_conversation(
     agent_id: String,
     title: String,
+    project_access_id: Option<String>,
     state: State<'_, AppState>,
 ) -> Result<storage::Conversation, String> {
     state
         .storage
-        .create_conversation(&agent_id, &title)
+        .create_conversation(&agent_id, &title, project_access_id.as_deref())
         .await
         .map_err(|e| e.to_string())
 }
@@ -53,10 +54,7 @@ pub async fn update_conversation_title(
 }
 
 #[tauri::command]
-pub async fn delete_conversation(
-    id: String,
-    state: State<'_, AppState>,
-) -> Result<(), String> {
+pub async fn delete_conversation(id: String, state: State<'_, AppState>) -> Result<(), String> {
     state
         .storage
         .delete_conversation(&id)

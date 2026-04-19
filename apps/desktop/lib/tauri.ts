@@ -3,22 +3,34 @@ import type {
   ChatCompletionResponse,
   Conversation,
   Message,
+  ProjectAccessGrant,
+  ProjectPermissionLevel,
   ProviderCredential,
   ProviderId,
   StoredMessage,
+  Tool,
+  ToolApprovalDecision,
+  ToolExecutionLog,
 } from '@pantheon-forge/agent-types';
 import { PROVIDERS } from '@pantheon-forge/agent-types';
 
 export type {
+  AgentTurnStreamPayload,
   ChatCompletionResponse,
   Conversation,
   Message,
   MessageRole,
+  ProjectAccessGrant,
+  ProjectPermissionLevel,
   ProviderCredential,
   ProviderDefinition,
   ProviderId,
   ProviderStatus,
   StoredMessage,
+  Tool,
+  ToolApprovalRequest,
+  ToolApprovalDecision,
+  ToolExecutionLog,
 } from '@pantheon-forge/agent-types';
 export { PROVIDERS };
 
@@ -60,6 +72,38 @@ export async function streamChatCompletion(
   });
 }
 
+export async function runAgentTurn(
+  requestId: string,
+  conversationId: string,
+  agentId: string,
+  providerId: ProviderId,
+  messages: Message[],
+  agentTools: Tool[],
+  model?: string,
+): Promise<string> {
+  return invoke('run_agent_turn', {
+    requestId,
+    conversationId,
+    agentId,
+    providerId,
+    messages,
+    agentTools,
+    model: model ?? null,
+  });
+}
+
+export async function respondToToolApproval(
+  approval: ToolApprovalDecision,
+): Promise<void> {
+  return invoke('respond_to_tool_approval', { approval });
+}
+
+export async function listToolExecutions(
+  conversationId: string,
+): Promise<ToolExecutionLog[]> {
+  return invoke('list_tool_executions', { conversationId });
+}
+
 export async function storeProviderCredentials(
   credential: ProviderCredential,
 ): Promise<void> {
@@ -89,8 +133,13 @@ export async function clearAllCredentials(): Promise<void> {
 export async function createConversation(
   agentId: string,
   title: string,
+  projectAccessId?: string | null,
 ): Promise<Conversation> {
-  return invoke('create_conversation', { agentId, title });
+  return invoke('create_conversation', {
+    agentId,
+    title,
+    projectAccessId: projectAccessId ?? null,
+  });
 }
 
 export async function getConversation(id: string): Promise<Conversation> {
@@ -135,4 +184,32 @@ export async function setSetting(key: string, value: string): Promise<void> {
 
 export async function getAllSettings(): Promise<Record<string, string>> {
   return invoke('get_all_settings');
+}
+
+export async function listProjectAccessGrants(): Promise<ProjectAccessGrant[]> {
+  return invoke('list_project_access_grants');
+}
+
+export async function saveProjectAccessGrant(
+  path: string,
+  permissionLevel: ProjectPermissionLevel = 'read',
+): Promise<ProjectAccessGrant> {
+  return invoke('save_project_access_grant', {
+    path,
+    permissionLevel,
+  });
+}
+
+export async function revokeProjectAccessGrant(id: string): Promise<void> {
+  return invoke('revoke_project_access_grant', { id });
+}
+
+export async function attachProjectAccessToConversation(
+  conversationId: string,
+  projectAccessId: string | null,
+): Promise<Conversation> {
+  return invoke('attach_project_access_to_conversation', {
+    conversationId,
+    projectAccessId,
+  });
 }

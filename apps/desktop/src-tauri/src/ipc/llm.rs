@@ -1,7 +1,7 @@
 use crate::credentials::get_credential_manager;
 use crate::llm::{
-    ChatCompletionRequest, ChatCompletionResponse, LLMConfig, Message, ProviderId, StreamEvent,
-    ProviderFactory,
+    ChatCompletionRequest, ChatCompletionResponse, LLMConfig, Message, ProviderFactory, ProviderId,
+    StreamEvent,
 };
 use crate::AppState;
 use futures_util::StreamExt;
@@ -32,9 +32,10 @@ pub async fn chat_completion(
         model: model.or(credential.model),
     };
 
-    let model = config.model.clone().unwrap_or_else(|| {
-        ProviderFactory::default_model(provider_enum).to_string()
-    });
+    let model = config
+        .model
+        .clone()
+        .unwrap_or_else(|| ProviderFactory::default_model(provider_enum).to_string());
 
     let request = ChatCompletionRequest {
         messages,
@@ -46,8 +47,7 @@ pub async fn chat_completion(
         tools: None,
     };
 
-    let provider = ProviderFactory::create_provider(&config)
-        .map_err(|e| e.to_string())?;
+    let provider = ProviderFactory::create_provider(&config).map_err(|e| e.to_string())?;
 
     provider
         .chat_completion(request)
@@ -89,9 +89,10 @@ pub async fn stream_chat_completion(
         model: model.or(credential.model),
     };
 
-    let model = config.model.clone().unwrap_or_else(|| {
-        ProviderFactory::default_model(provider_enum).to_string()
-    });
+    let model = config
+        .model
+        .clone()
+        .unwrap_or_else(|| ProviderFactory::default_model(provider_enum).to_string());
 
     let request = ChatCompletionRequest {
         messages,
@@ -103,8 +104,7 @@ pub async fn stream_chat_completion(
         tools: None,
     };
 
-    let provider = ProviderFactory::create_provider(&config)
-        .map_err(|e| e.to_string())?;
+    let provider = ProviderFactory::create_provider(&config).map_err(|e| e.to_string())?;
 
     let mut stream: Pin<Box<dyn futures_util::Stream<Item = StreamEvent> + Send>> =
         provider.stream_completion(request).await;
@@ -114,42 +114,54 @@ pub async fn stream_chat_completion(
     while let Some(event) = stream.next().await {
         match event {
             StreamEvent::Start { .. } => {
-                let _ = app_handle.emit("stream-event", StreamPayload {
-                    request_id: request_id.clone(),
-                    event_type: "start".into(),
-                    delta: None,
-                    finish_reason: None,
-                    error: None,
-                });
+                let _ = app_handle.emit(
+                    "stream-event",
+                    StreamPayload {
+                        request_id: request_id.clone(),
+                        event_type: "start".into(),
+                        delta: None,
+                        finish_reason: None,
+                        error: None,
+                    },
+                );
             }
             StreamEvent::Content { delta } => {
                 full_content.push_str(&delta);
-                let _ = app_handle.emit("stream-event", StreamPayload {
-                    request_id: request_id.clone(),
-                    event_type: "content".into(),
-                    delta: Some(delta),
-                    finish_reason: None,
-                    error: None,
-                });
+                let _ = app_handle.emit(
+                    "stream-event",
+                    StreamPayload {
+                        request_id: request_id.clone(),
+                        event_type: "content".into(),
+                        delta: Some(delta),
+                        finish_reason: None,
+                        error: None,
+                    },
+                );
             }
             StreamEvent::Done { finish_reason, .. } => {
-                let _ = app_handle.emit("stream-event", StreamPayload {
-                    request_id: request_id.clone(),
-                    event_type: "done".into(),
-                    delta: None,
-                    finish_reason,
-                    error: None,
-                });
+                let _ = app_handle.emit(
+                    "stream-event",
+                    StreamPayload {
+                        request_id: request_id.clone(),
+                        event_type: "done".into(),
+                        delta: None,
+                        finish_reason,
+                        error: None,
+                    },
+                );
                 break;
             }
             StreamEvent::Error { message } => {
-                let _ = app_handle.emit("stream-event", StreamPayload {
-                    request_id: request_id.clone(),
-                    event_type: "error".into(),
-                    delta: None,
-                    finish_reason: None,
-                    error: Some(message.clone()),
-                });
+                let _ = app_handle.emit(
+                    "stream-event",
+                    StreamPayload {
+                        request_id: request_id.clone(),
+                        event_type: "error".into(),
+                        delta: None,
+                        finish_reason: None,
+                        error: Some(message.clone()),
+                    },
+                );
                 return Err(format!("Stream error: {}", message));
             }
             _ => {}

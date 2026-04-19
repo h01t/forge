@@ -37,9 +37,10 @@ impl ProviderFactory {
                 config.base_url.clone(),
             ))),
             ProviderId::DeepSeek => {
-                let base_url = config.base_url.clone().or_else(|| {
-                    Some("https://api.deepseek.com/v1".to_string())
-                });
+                let base_url = config
+                    .base_url
+                    .clone()
+                    .or_else(|| Some("https://api.deepseek.com/v1".to_string()));
                 Ok(Box::new(OpenAIProvider::new(
                     config.api_key.clone(),
                     base_url,

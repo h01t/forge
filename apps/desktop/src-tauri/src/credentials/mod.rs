@@ -1,7 +1,6 @@
 use crate::llm::types::ProviderId;
 use keyring::Entry;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 const SERVICE_NAME: &str = "PantheonForge";
 
@@ -64,9 +63,7 @@ impl CredentialManager {
     /// Load all stored credentials
     pub fn load_credentials(&self) -> Result<StoredCredentials, CredentialError> {
         let entry = self.get_entry()?;
-        let password = entry
-            .get_password()
-            .unwrap_or_else(|_| String::from("{}"));
+        let password = entry.get_password().unwrap_or_else(|_| String::from("{}"));
 
         if password.is_empty() {
             return Ok(StoredCredentials::default());
@@ -89,7 +86,9 @@ impl CredentialManager {
         let mut creds = self.load_credentials().unwrap_or_default();
 
         // Remove existing credential for this provider
-        creds.providers.retain(|c| c.provider_id != credential.provider_id);
+        creds
+            .providers
+            .retain(|c| c.provider_id != credential.provider_id);
 
         // Add new credential
         creds.providers.push(credential);
@@ -98,7 +97,10 @@ impl CredentialManager {
     }
 
     /// Get a credential for a provider
-    pub fn get_provider(&self, provider_id: ProviderId) -> Result<ProviderCredential, CredentialError> {
+    pub fn get_provider(
+        &self,
+        provider_id: ProviderId,
+    ) -> Result<ProviderCredential, CredentialError> {
         let creds = self.load_credentials()?;
 
         creds
@@ -150,8 +152,7 @@ impl Default for CredentialManager {
 }
 
 /// Global credential manager instance
-static CREDENTIAL_MANAGER: std::sync::OnceLock<CredentialManager> =
-    std::sync::OnceLock::new();
+static CREDENTIAL_MANAGER: std::sync::OnceLock<CredentialManager> = std::sync::OnceLock::new();
 
 pub fn get_credential_manager() -> &'static CredentialManager {
     CREDENTIAL_MANAGER.get_or_init(CredentialManager::new)
