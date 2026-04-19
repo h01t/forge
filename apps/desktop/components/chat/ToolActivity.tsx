@@ -59,7 +59,10 @@ export default function ToolActivity({ execution, agentName }: ToolActivityProps
 
   return (
     <div className="flex w-full justify-start">
-      <div className="w-full max-w-[72%] min-w-0">
+      <div
+        className="w-full min-w-0"
+        style={{ maxWidth: 'min(92%, 110ch)' }}
+      >
         <div className="mb-2 flex items-center gap-2 px-1">
           <span className="text-[10px] font-display font-semibold uppercase tracking-[0.17em] text-accent-500">
             {agentName ?? execution.agentId}

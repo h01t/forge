@@ -1,61 +1,27 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { ArrowUpRight, CheckCircle2, FolderTree, Sparkles } from 'lucide-react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { ArrowUpRight } from 'lucide-react';
 import { useChatStore } from '@/stores/chat';
-import { useProjectAccessStore } from '@/stores/project-access';
-import { useSettingsStore } from '@/stores/settings';
-import { useAgentStore } from '@/stores/agents';
-import { PROVIDERS, type ProviderId } from '@/lib/tauri';
+import type { ProviderId } from '@/lib/tauri';
 
-const TOOL_ENABLED_IDS = new Set(['read-file', 'search-files']);
+interface ChatInputProps {
+  approvalPrompt?: ReactNode;
+  locked?: boolean;
+  providerId: ProviderId | null;
+  model?: string;
+}
 
-export default function ChatInput() {
+export default function ChatInput({
+  approvalPrompt,
+  locked = false,
+  providerId,
+  model,
+}: ChatInputProps) {
   const [input, setInput] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { conversation, sendMessage, streaming } = useChatStore();
-  const {
-    activeProvider,
-    providers,
-    getFirstUsableProvider,
-    isProviderConfigured,
-    isProviderUsable,
-  } = useSettingsStore();
-  const { starterProjectId, getGrantById } = useProjectAccessStore();
-  const { currentAgent } = useAgentStore();
-
-  const agentPref = currentAgent?.llmPreference as ProviderId | undefined;
-  const [selectedProvider, setSelectedProvider] = useState<ProviderId | null>(null);
-  const selectedUsableProvider =
-    selectedProvider && isProviderUsable(selectedProvider) ? selectedProvider : null;
-  const agentPreferredProvider =
-    agentPref && isProviderUsable(agentPref) ? agentPref : null;
-  const fallbackProvider =
-    (activeProvider && isProviderUsable(activeProvider) ? activeProvider : null) ??
-    getFirstUsableProvider();
-  const resolvedProvider = selectedUsableProvider ?? agentPreferredProvider ?? fallbackProvider;
-  const hasProvider = resolvedProvider !== null;
-  const resolvedProviderMeta = resolvedProvider
-    ? PROVIDERS.find((provider) => provider.id === resolvedProvider) ?? null
-    : null;
-  const model = resolvedProvider
-    ? providers[resolvedProvider]?.credential?.model ??
-      resolvedProviderMeta?.defaultModel
-    : undefined;
-  const activeRouteTitle = resolvedProvider
-    ? `${resolvedProviderMeta?.name ?? 'Provider'} — ${model ?? 'No model configured'}`
-    : 'Configure a usable provider in Settings to send messages.';
-  const projectGrant = getGrantById(
-    conversation?.project_access_id ?? starterProjectId,
-  );
-  const toolReady =
-    Boolean(projectGrant) &&
-    (currentAgent?.tools ?? []).some((tool) => TOOL_ENABLED_IDS.has(tool.id));
-  const toolMessage = toolReady
-    ? `Read-only file tools are available inside ${projectGrant?.displayName ?? 'the selected project'}.`
-    : (currentAgent?.tools ?? []).some((tool) => TOOL_ENABLED_IDS.has(tool.id))
-      ? 'Open a project to enable read-only file tools for this specialist.'
-      : 'This routing surface is chat-only for the current specialist.';
+  const { sendMessage, streaming } = useChatStore();
+  const hasProvider = providerId !== null;
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -66,8 +32,8 @@ export default function ChatInput() {
 
   const handleSubmit = () => {
     const trimmed = input.trim();
-    if (!trimmed || !resolvedProvider || !hasProvider || streaming) return;
-    sendMessage(trimmed, resolvedProvider, model);
+    if (!trimmed || !providerId || !hasProvider || streaming || locked) return;
+    sendMessage(trimmed, providerId, model);
     setInput('');
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -83,87 +49,7 @@ export default function ChatInput() {
 
   return (
     <div className="space-y-3.5">
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-start">
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-primary-400">
-            <Sparkles size={14} />
-            <span className="shell-kicker">Routing</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {PROVIDERS.map((provider) => {
-              const configured = isProviderConfigured(provider.id);
-              const selectable = provider.status === 'available' && configured;
-              const selected = resolvedProvider === provider.id;
-              const title = provider.status === 'planned'
-                ? `${provider.name} — planned integration`
-                : configured
-                  ? `${provider.name} (${provider.defaultModel})`
-                  : `${provider.name} — configure credentials in Settings`;
-
-              return (
-                <button
-                  key={provider.id}
-                  type="button"
-                  title={title}
-                  disabled={!selectable}
-                  onClick={() => {
-                    if (selectable) {
-                      setSelectedProvider(provider.id);
-                    }
-                  }}
-                  className={`rounded-xl border px-3 py-1.5 text-[11px] font-medium transition-all duration-200 ${
-                    selected
-                      ? 'border-primary-500/45 bg-primary-500/12 text-primary-300 shadow-[0_0_0_1px_rgba(0,240,255,0.08)]'
-                      : selectable
-                        ? 'border-border-highlight bg-surface-secondary text-text-secondary hover:border-primary-500/30 hover:text-text-primary'
-                        : provider.status === 'planned'
-                          ? 'border-warning-500/30 bg-warning-500/8 text-warning-500/80'
-                          : 'border-border-subtle bg-surface-secondary text-text-muted/60'
-                  }`}
-                >
-                  <span>{provider.name}</span>
-                  {provider.status === 'planned' && <span className="ml-1">Planned</span>}
-                </button>
-              );
-            })}
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {projectGrant ? (
-              <span
-                title={projectGrant.path}
-                className="shell-pill border-accent-500/20 bg-accent-500/8 text-accent-500"
-              >
-                <FolderTree size={12} />
-                {projectGrant.displayName}
-              </span>
-            ) : null}
-            <p className="text-xs leading-6 text-text-muted">{toolMessage}</p>
-          </div>
-        </div>
-
-        <div
-          title={activeRouteTitle}
-          className="shell-panel-muted relative flex min-h-[104px] w-full flex-col items-center justify-center overflow-hidden px-4 py-4 text-center lg:ml-auto lg:max-w-[220px]"
-        >
-          <div className="pointer-events-none absolute inset-x-6 bottom-0 h-12 bg-gradient-to-t from-primary-500/10 to-transparent" />
-          <div className="flex items-center justify-center gap-2 text-accent-500">
-            <CheckCircle2 size={14} />
-            <span className="shell-kicker text-accent-500">Active Route</span>
-          </div>
-          <p className="mt-3 text-[13px] font-semibold uppercase tracking-[0.14em] text-text-secondary">
-            {resolvedProvider ? 'Provider' : 'Status'}
-          </p>
-          <p className="mt-1 text-sm font-semibold text-text-primary">
-            {resolvedProvider ? resolvedProviderMeta?.name : 'No provider'}
-          </p>
-          <p
-            title={resolvedProvider ? model : undefined}
-            className="mt-1 max-w-full truncate text-[11px] leading-5 text-text-secondary"
-          >
-            {resolvedProvider ? model : 'Configure a usable provider in Settings to send messages.'}
-          </p>
-        </div>
-      </div>
+      {approvalPrompt}
 
       <div className="shell-panel-muted px-4 py-4 md:px-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-end">
@@ -174,11 +60,13 @@ export default function ChatInput() {
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={
-                !hasProvider
-                  ? 'Configure a provider in Settings first…'
+                locked
+                  ? 'Resolve the approval request above to continue…'
+                  : !hasProvider
+                  ? 'Configure a provider in the utility bar above before sending a message…'
                   : 'Outline the task, question, or decision you want to work through…'
               }
-              disabled={!hasProvider}
+              disabled={!hasProvider || locked}
               className="cyber-input min-h-[108px] w-full resize-none rounded-[20px] text-[15px] disabled:opacity-50"
               rows={4}
             />
@@ -191,7 +79,7 @@ export default function ChatInput() {
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={streaming || !input.trim() || !hasProvider}
+            disabled={streaming || locked || !input.trim() || !hasProvider}
             className="cyber-button inline-flex h-[3.2rem] min-w-[160px] items-center justify-center gap-2 text-sm disabled:cursor-not-allowed disabled:opacity-40"
           >
             {streaming ? 'Sending…' : 'Send Message'}

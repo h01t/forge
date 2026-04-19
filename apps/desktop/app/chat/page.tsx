@@ -122,8 +122,8 @@ function ChatContent() {
   ]);
 
   const shellDescription = currentAgent
-    ? `${currentAgent.name} is active. Keep the conversation anchored in one centered workspace and pull the thread list in only when you need it.`
-    : 'Use the launchpad to pick an agent, then work inside a calmer, more deliberate chat surface.';
+    ? `${currentAgent.name} is active. Keep the thread list on the left, the utility controls above, and the conversation flowing through the full workspace canvas.`
+    : 'Use the launchpad to pick an agent, then work inside a calmer, wider chat surface.';
 
   return (
     <AppShell

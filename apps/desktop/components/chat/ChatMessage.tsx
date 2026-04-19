@@ -13,7 +13,10 @@ export default function ChatMessage({ message, agentName }: ChatMessageProps) {
 
   return (
     <div className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'}`}>
-      <div className={`max-w-[68%] min-w-0 ${isUser ? 'message-user' : 'message-assistant'}`}>
+      <div
+        className={`min-w-0 ${isUser ? 'message-user' : 'message-assistant'}`}
+        style={{ maxWidth: 'min(92%, 110ch)' }}
+      >
         <div className="mb-2 flex items-center gap-2 px-1">
           <span
             className={`text-[10px] font-display font-semibold uppercase tracking-[0.17em] ${

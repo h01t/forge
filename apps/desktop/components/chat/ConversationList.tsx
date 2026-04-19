@@ -48,14 +48,14 @@ function ConversationPanel({
   };
 
   return (
-    <section className="shell-panel shell-panel-clip flex h-full min-h-[var(--shell-content-height)] flex-col">
-      <div className="flex items-center justify-between gap-3 border-b border-border-subtle px-5 py-[1.125rem]">
+    <section className="shell-panel flex h-[var(--shell-content-height)] min-h-0 flex-col">
+      <div className="flex items-start justify-between gap-4 border-b border-border-subtle px-6 py-5">
         <div>
           <p className="shell-kicker text-primary-400">Workspace Threads</p>
-          <h2 className="mt-2 text-[1.15rem] font-display font-semibold text-text-primary">
+          <h2 className="mt-2 text-[1.1rem] font-display font-semibold text-text-primary">
             Conversations
           </h2>
-          <p className="mt-1 text-xs uppercase tracking-[0.14em] text-text-muted">
+          <p className="mt-1.5 text-xs uppercase tracking-[0.14em] text-text-muted">
             {conversations.length} active thread{conversations.length === 1 ? '' : 's'}
           </p>
         </div>
@@ -68,26 +68,26 @@ function ConversationPanel({
           >
             <X size={16} />
           </button>
-        ) : null}
+          ) : null}
       </div>
 
-      <div className="px-5 py-3.5">
+      <div className="px-6 py-4">
         <button
           onClick={onNew}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-primary-500/35 bg-primary-500/10 px-4 py-2.5 text-sm font-medium text-primary-400 transition-all duration-200 hover:border-primary-400/50 hover:bg-primary-500/15"
+          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[18px] border border-primary-500/35 bg-primary-500/10 px-4 text-sm font-medium text-primary-400 transition-all duration-200 hover:border-primary-400/50 hover:bg-primary-500/15"
         >
           <Plus size={16} />
           New Conversation
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-4">
+      <div className="flex-1 overflow-y-auto px-5 pb-5">
         {conversations.length === 0 ? (
-          <div className="shell-panel-muted px-5 py-6 text-sm leading-7 text-text-secondary">
+          <div className="shell-panel-muted mx-1 px-5 py-6 text-sm leading-7 text-text-secondary">
             No conversations yet. Start a new thread to anchor the workspace.
           </div>
         ) : (
-          <div className="space-y-2.5">
+          <div className="space-y-3">
             {conversations.map((conversation) => (
               <div
                 key={conversation.id}
@@ -108,11 +108,11 @@ function ConversationPanel({
               >
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-primary-500/[0.08] to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <p className="truncate text-sm font-medium text-text-primary">
+                  <div className="min-w-0 flex-1 space-y-2.5">
+                    <p className="truncate text-sm font-medium leading-6 text-text-primary">
                       {conversation.title}
                     </p>
-                    <div className="flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-text-muted">
+                    <div className="flex flex-wrap items-center gap-2.5 text-[10px] uppercase tracking-[0.16em] text-text-muted">
                       <span>{relativeTime(conversation.updated_at)}</span>
                       {conversation.agent_id && conversation.agent_id !== 'default' ? (
                         <span className="shell-pill">{getAgentName(conversation.agent_id)}</span>

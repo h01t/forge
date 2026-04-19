@@ -1,6 +1,6 @@
 'use client';
 
-import { FolderTree, ShieldCheck } from 'lucide-react';
+import { FolderTree } from 'lucide-react';
 import { attachProjectAccessToConversation } from '@/lib/tauri';
 import OpenProjectButton from '@/components/projects/OpenProjectButton';
 import { useChatStore } from '@/stores/chat';
@@ -40,34 +40,18 @@ export default function ConversationProjectAccessCard({
   };
 
   return (
-    <div className="shell-panel-muted relative overflow-hidden px-5 py-4">
-      <div className="pointer-events-none absolute inset-y-0 right-0 w-32 bg-[radial-gradient(circle_at_left,rgba(0,245,255,0.12),transparent_72%)]" />
+    <div className="shell-panel-muted px-4 py-3.5">
       <div className="flex items-center gap-2 text-primary-400">
-        <FolderTree size={15} />
+        <FolderTree size={14} />
         <span className="shell-kicker text-primary-400">Project Access</span>
       </div>
 
-      <p className="mt-2 text-sm leading-7 text-text-secondary">
-        {conversation
-          ? supportsTools
-            ? 'This conversation can use read-only tools only inside its attached project.'
-            : 'This conversation is attached to a project, but the current specialist does not expose read-only file tools.'
-          : supportsTools
-            ? 'Pick a starter project now if you want the next conversation to open with read-only tool scope already attached.'
-            : 'You can still choose a starter project now, even though the current specialist does not expose read-only file tools.'}
-      </p>
-
-      <div className="mt-4 space-y-3">
-        <label className="shell-kicker text-text-muted">
-          {conversation ? 'Bound Project' : 'Starter Project'}
-        </label>
-
+      <div className="mt-3 flex flex-wrap items-center gap-2.5">
         <select
           value={selectedProjectId ?? ''}
-          onChange={(event) =>
-            void handleSelectProject(event.target.value || null)
-          }
-          className="cyber-input h-12 w-full rounded-[18px] px-4"
+          onChange={(event) => void handleSelectProject(event.target.value || null)}
+          className="cyber-input h-11 min-w-[220px] flex-1 rounded-[16px] px-4 text-sm"
+          title={selectedGrant?.path}
         >
           <option value="">
             {conversation ? 'No project attached' : 'No starter project selected'}
@@ -80,34 +64,32 @@ export default function ConversationProjectAccessCard({
         </select>
 
         <OpenProjectButton
-          label={conversation ? 'Open And Attach Project' : 'Open Project'}
+          label={conversation ? 'Open And Attach' : 'Open Project'}
           onGranted={async (grant) => {
             await handleSelectProject(grant.id);
           }}
-          className="inline-flex items-center gap-2 rounded-2xl border border-border-highlight bg-surface-secondary px-4 py-2.5 text-sm text-text-primary transition-all duration-200 hover:border-primary-500/30 hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex h-11 items-center gap-2 rounded-[16px] border border-border-highlight bg-surface-secondary px-4 text-sm text-text-primary transition-all duration-200 hover:border-primary-500/30 hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-40"
         />
       </div>
 
-      <div className="mt-4 rounded-2xl border border-border-subtle bg-surface-primary/55 px-4 py-3">
-        <div className="flex items-center gap-2 text-accent-500">
-          <ShieldCheck size={14} />
-          <span className="shell-kicker text-accent-500">Active Grant</span>
-        </div>
-        {selectedGrant ? (
-          <div className="mt-3 space-y-2">
-            <p className="text-sm font-medium text-text-primary">{selectedGrant.displayName}</p>
-            <p className="break-all text-xs leading-6 text-text-secondary">{selectedGrant.path}</p>
-            <p className="text-xs leading-6 text-text-muted">
-              Permission: {selectedGrant.permissionLevel === 'read' ? 'Read-only' : selectedGrant.permissionLevel}
-            </p>
-          </div>
-        ) : (
-          <p className="mt-3 text-sm leading-7 text-text-secondary">
-            {supportsTools
-              ? 'No project is selected, so read-only tools stay hidden from the model for this thread.'
-              : 'No project is selected. Regular chat remains available without tool access.'}
-          </p>
-        )}
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs leading-6">
+        <span className="shell-pill border-accent-500/20 bg-accent-500/8 text-accent-500">
+          {selectedGrant
+            ? selectedGrant.permissionLevel === 'read'
+              ? 'Read-only'
+              : selectedGrant.permissionLevel
+            : 'No grant'}
+        </span>
+        <p
+          title={selectedGrant?.path}
+          className="min-w-0 flex-1 truncate text-text-secondary"
+        >
+          {selectedGrant
+            ? `${selectedGrant.displayName} · ${selectedGrant.path}`
+            : supportsTools
+              ? 'Attach a project to expose read-only file tools in this thread.'
+              : 'Project access is optional for this specialist.'}
+        </p>
       </div>
     </div>
   );
