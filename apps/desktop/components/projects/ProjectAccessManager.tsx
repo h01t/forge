@@ -63,8 +63,9 @@ export default function ProjectAccessManager() {
             return (
               <div
                 key={grant.id}
-                className="shell-panel-muted flex flex-wrap items-start justify-between gap-4 px-5 py-4"
+                className="shell-panel-muted relative flex flex-wrap items-start justify-between gap-4 overflow-hidden px-5 py-4"
               >
+                <div className="pointer-events-none absolute inset-y-0 right-0 w-40 bg-[radial-gradient(circle_at_left,rgba(0,245,255,0.12),transparent_68%)]" />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-sm font-medium text-text-primary">{grant.displayName}</p>

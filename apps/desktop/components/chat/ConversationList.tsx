@@ -55,6 +55,9 @@ function ConversationPanel({
           <h2 className="mt-2 text-[1.15rem] font-display font-semibold text-text-primary">
             Conversations
           </h2>
+          <p className="mt-1 text-xs uppercase tracking-[0.14em] text-text-muted">
+            {conversations.length} active thread{conversations.length === 1 ? '' : 's'}
+          </p>
         </div>
 
         {onClose ? (
@@ -97,12 +100,13 @@ function ConversationPanel({
                     onSelect(conversation.id);
                   }
                 }}
-                className={`group rounded-2xl border px-4 py-3.5 text-left transition-all duration-200 ${
+                className={`group relative overflow-hidden rounded-2xl border px-4 py-3.5 text-left transition-all duration-200 ${
                   activeId === conversation.id
                     ? 'border-primary-500/40 bg-primary-500/10 shadow-[0_0_0_1px_rgba(0,240,255,0.08)]'
                     : 'border-border-subtle bg-surface-secondary/75 hover:border-border-highlight hover:bg-surface-hover'
                 }`}
               >
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-primary-500/[0.08] to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1 space-y-2">
                     <p className="truncate text-sm font-medium text-text-primary">

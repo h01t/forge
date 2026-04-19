@@ -40,7 +40,8 @@ export default function ConversationProjectAccessCard({
   };
 
   return (
-    <div className="shell-panel-muted px-5 py-4">
+    <div className="shell-panel-muted relative overflow-hidden px-5 py-4">
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-32 bg-[radial-gradient(circle_at_left,rgba(0,245,255,0.12),transparent_72%)]" />
       <div className="flex items-center gap-2 text-primary-400">
         <FolderTree size={15} />
         <span className="shell-kicker text-primary-400">Project Access</span>

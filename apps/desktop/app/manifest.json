@@ -1,10 +1,24 @@
 {
   "name": "Pantheon Forge",
   "short_name": "Pantheon",
-  "description": "AI Agent Platform",
+  "description": "Unified agent command deck for specialist AI workflows",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0a0f",
-  "theme_color": "#00f0ff",
-  "orientation": "landscape-primary"
+  "background_color": "#040814",
+  "theme_color": "#5ffbff",
+  "orientation": "landscape-primary",
+  "icons": [
+    {
+      "src": "/brand/pantheon-forge-mark.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/brand/pantheon-forge-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }

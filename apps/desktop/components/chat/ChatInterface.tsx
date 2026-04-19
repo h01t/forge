@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Bot, Sparkles } from 'lucide-react';
+import { Bot, FolderTree, Sparkles } from 'lucide-react';
 import ConversationProjectAccessCard from '@/components/projects/ConversationProjectAccessCard';
 import { useChatStore } from '@/stores/chat';
 import { useProjectAccessStore } from '@/stores/project-access';
@@ -40,6 +40,7 @@ export default function ChatInterface({ agent }: ChatInterfaceProps) {
     conversation?.project_access_id ?? starterProjectId,
   );
   const toolsReady = Boolean(projectGrant && agentHasSupportedTools);
+  const enabledToolCount = (agent?.tools ?? []).filter((tool) => TOOL_ENABLED_IDS.has(tool.id)).length;
   const workspaceStateMessage = !hasUsableProvider
     ? 'No usable provider is configured yet. Open Settings from the rail to connect a gateway.'
     : agentHasSupportedTools && !projectGrant
@@ -88,6 +89,22 @@ export default function ChatInterface({ agent }: ChatInterfaceProps) {
                   ? agent.description
                   : 'Choose an agent from the launchpad, then start the conversation from this shared workspace.'}
               </p>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <span className="shell-pill border-primary-500/20 bg-primary-500/8 text-primary-300">
+                  {enabledToolCount > 0
+                    ? `${enabledToolCount} read-only tool${enabledToolCount === 1 ? '' : 's'}`
+                    : 'Chat-only specialist'}
+                </span>
+                {projectGrant ? (
+                  <span
+                    title={projectGrant.path}
+                    className="shell-pill border-accent-500/20 bg-accent-500/8 text-accent-500"
+                  >
+                    <FolderTree size={12} />
+                    {projectGrant.displayName}
+                  </span>
+                ) : null}
+              </div>
             </div>
           </div>
 
@@ -97,7 +114,7 @@ export default function ChatInterface({ agent }: ChatInterfaceProps) {
                 <Sparkles size={15} />
                 <span className="shell-kicker text-primary-400">Workspace State</span>
               </div>
-              <p className="mt-2 text-sm leading-7 text-text-secondary">
+              <p className="mt-3 text-sm leading-7 text-text-secondary">
                 {workspaceStateMessage}
               </p>
             </div>
@@ -110,9 +127,10 @@ export default function ChatInterface({ agent }: ChatInterfaceProps) {
       <div className="flex-1 overflow-y-auto px-6 py-5">
         <div className="mx-auto flex w-full max-w-[880px] flex-col gap-5">
           {timeline.length === 0 ? (
-            <div className="shell-panel-muted flex min-h-[300px] items-center justify-center px-8 py-9 text-center">
-              <div className="max-w-xl space-y-4">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-3xl border border-primary-500/20 bg-primary-500/8 text-primary-400">
+            <div className="shell-panel-muted relative flex min-h-[300px] items-center justify-center overflow-hidden px-8 py-9 text-center">
+              <div className="pointer-events-none absolute inset-x-[18%] bottom-0 h-24 bg-gradient-to-t from-primary-500/10 via-primary-500/[0.03] to-transparent" />
+              <div className="relative max-w-xl space-y-4">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[28px] border border-primary-500/20 bg-primary-500/8 text-primary-400 shadow-[0_0_28px_rgba(67,240,255,0.12)]">
                   <Bot size={22} />
                 </div>
                 <h3 className="text-[1.95rem] font-display font-semibold text-text-primary">

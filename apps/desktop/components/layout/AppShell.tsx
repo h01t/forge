@@ -8,12 +8,13 @@ import {
   Bot,
   ChevronLeft,
   ChevronRight,
+  FolderTree,
   Home,
   MessagesSquare,
   PlugZap,
   Settings2,
-  Sparkles,
 } from 'lucide-react';
+import PantheonForgeBrand from '@/components/brand/PantheonForgeBrand';
 import { useIsTauriDesktop } from '@/lib/platform';
 import { PROVIDERS } from '@/lib/tauri';
 import { useMediaQuery } from '@/lib/useMediaQuery';
@@ -69,7 +70,7 @@ export default function AppShell({
   const isAutoCompact = useMediaQuery('(max-width: 1279px)');
   const { railMode, toggleRailMode } = useShellStore();
   const { init: initSettings, providers } = useSettingsStore();
-  const { init: initProjectAccess } = useProjectAccessStore();
+  const { init: initProjectAccess, grants } = useProjectAccessStore();
   const { agents, init: initAgents } = useAgentStore();
 
   useEffect(() => {
@@ -83,6 +84,23 @@ export default function AppShell({
   ).length;
   const effectiveRailMode = isAutoCompact ? 'compact' : railMode;
   const compact = effectiveRailMode === 'compact';
+  const shellStatus = [
+    {
+      key: 'agents',
+      icon: Bot,
+      label: `${agents.length} specialists online`,
+    },
+    {
+      key: 'providers',
+      icon: PlugZap,
+      label: `${configuredProviders} gateways ready`,
+    },
+    {
+      key: 'projects',
+      icon: FolderTree,
+      label: `${grants.length} projects granted`,
+    },
+  ];
   const railLabel = isAutoCompact
     ? 'Navigation auto-compacts below 1280px'
     : compact
@@ -118,21 +136,11 @@ export default function AppShell({
           <div className="flex h-full flex-col gap-4 px-3.5 py-4">
             <Link
               href="/"
-              className={`shell-panel flex items-center gap-3 px-3.5 py-3 ${
+              className={`shell-brand-panel shell-panel flex items-center gap-3 px-3.5 py-3 ${
                 compact ? 'justify-center px-0' : ''
               }`}
             >
-              <div className="shell-icon-chip">
-                <Sparkles size={16} />
-              </div>
-              {!compact && (
-                <div className="min-w-0">
-                  <p className="truncate font-display text-[14px] font-semibold tracking-[0.18em] text-primary-500">
-                    PANTHEON FORGE
-                  </p>
-                  <p className="mt-1 text-[11px] text-text-muted">Unified agent command deck</p>
-                </div>
-              )}
+              <PantheonForgeBrand compact={compact} />
             </Link>
 
             <nav className="flex flex-col gap-1.5">
@@ -211,10 +219,12 @@ export default function AppShell({
 
         <main className="app-shell__main">
           <div className="absolute inset-0 grid-bg pointer-events-none" />
+          <div className="app-shell__nebula pointer-events-none" />
+          <div className="app-shell__constellation pointer-events-none" />
 
           <div className="app-shell__scroll">
             <div className={`mx-auto flex w-full flex-col gap-5 ${stageWidthClasses[stageWidth]}`}>
-              <section className="shell-panel sticky top-0 z-20 flex flex-wrap items-start justify-between gap-4 px-6 py-[1.125rem] backdrop-blur-xl">
+              <section className="shell-header shell-panel sticky top-0 z-20 flex flex-wrap items-start justify-between gap-4 px-6 py-[1.125rem] backdrop-blur-xl">
                 <div className="min-w-0">
                   <p className="shell-kicker text-primary-400">Command Surface</p>
                   <h1 className="mt-2 text-[1.9rem] font-display font-semibold tracking-[0.03em] text-text-primary">
@@ -224,12 +234,24 @@ export default function AppShell({
                     {description}
                   </p>
                 </div>
-                {actions ? (
-                  <div className="flex flex-wrap items-center gap-3 pt-1">{actions}</div>
-                ) : null}
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  {!compact ? (
+                    shellStatus.map((status) => {
+                      const Icon = status.icon;
+
+                      return (
+                        <span key={status.key} className="shell-status-chip">
+                          <Icon size={14} />
+                          {status.label}
+                        </span>
+                      );
+                    })
+                  ) : null}
+                  {actions}
+                </div>
               </section>
 
-              <div className="pb-7">{children}</div>
+              <div className="shell-stage-frame pb-7">{children}</div>
             </div>
           </div>
         </main>

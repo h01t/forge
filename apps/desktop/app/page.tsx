@@ -11,6 +11,7 @@ import {
   PlugZap,
   ShieldCheck,
 } from 'lucide-react';
+import PantheonForgeBrand from '@/components/brand/PantheonForgeBrand';
 import AppShell from '@/components/layout/AppShell';
 import OpenProjectButton from '@/components/projects/OpenProjectButton';
 import { useAgentStore } from '@/stores/agents';
@@ -82,87 +83,129 @@ export default function Home() {
       stageWidth="launchpad"
     >
       <div className="space-y-5">
-        <section className="shell-panel grid gap-6 px-7 py-7 md:grid-cols-[1.08fr_0.92fr] md:px-9 md:py-9">
-          <div className="space-y-6">
-            <div className="space-y-3">
-              <p className="shell-kicker text-primary-400">Agent Command Deck</p>
-              <h2 className="max-w-[10ch] text-[2.9rem] font-display font-semibold leading-[1.02] text-text-primary md:text-[3.35rem]">
-                Build with the right specialist, not a blank screen.
-              </h2>
-              <p className="max-w-[36rem] text-[15px] leading-8 text-text-secondary">
-                Pantheon Forge keeps your active agents, providers, and recent conversations
-                anchored in one premium workspace, so starting work feels intentional instead of
-                sparse.
-              </p>
-            </div>
+        <section className="shell-panel relative overflow-hidden px-7 py-7 md:px-9 md:py-9">
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-[42%] bg-[radial-gradient(circle_at_top_left,rgba(0,245,255,0.16),transparent_54%),linear-gradient(180deg,rgba(32,71,88,0.1),transparent)] opacity-90" />
+          <div className="pointer-events-none absolute inset-x-[36%] bottom-0 h-px bg-gradient-to-r from-transparent via-primary-500/35 to-transparent" />
 
-            <div className="flex flex-wrap items-center gap-3">
-              <Link href="/chat/" className="cyber-button inline-flex items-center gap-2 text-sm">
-                Open Chat
-                <ArrowRight size={16} />
-              </Link>
-              <OpenProjectButton
-                label="Open Project"
-                onGranted={async (grant) => {
-                  await setStarterProjectId(grant.id);
-                }}
-                className="inline-flex items-center gap-2 rounded-2xl border border-border-highlight bg-surface-secondary px-5 py-3 text-sm text-text-primary transition-all duration-200 hover:border-primary-500/40 hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-40"
-              />
-              <Link
-                href="/settings/"
-                className="inline-flex items-center gap-2 rounded-2xl border border-border-highlight bg-surface-secondary px-5 py-3 text-sm text-text-primary transition-all duration-200 hover:border-primary-500/40 hover:bg-surface-hover"
-              >
-                Configure Providers
-              </Link>
-            </div>
-          </div>
-
-          <div className="grid auto-rows-fr content-center gap-3 sm:grid-cols-2">
-            <div className="shell-panel-muted flex h-full flex-col items-center justify-center px-6 py-6 text-center">
-              <div className="flex items-center justify-center gap-2 text-primary-400">
-                <PlugZap size={16} />
-                <span className="shell-kicker">Provider Readiness</span>
+          <div className="relative grid gap-6 md:grid-cols-[1.06fr_0.94fr] md:items-stretch">
+            <div className="space-y-6">
+              <div className="inline-flex rounded-[26px] border border-border-highlight bg-surface-secondary/75 px-4 py-3 backdrop-blur-xl">
+                <PantheonForgeBrand />
               </div>
-              <p className="mt-4 text-[2rem] font-display font-semibold text-text-primary">
-                {configuredProviderCount}
-              </p>
-              <p className="mt-2 max-w-[16rem] text-sm leading-7 text-text-secondary">
-                Available gateways configured and ready for routing.
-              </p>
-            </div>
 
-            <div className="shell-panel-muted flex h-full flex-col items-center justify-center px-6 py-6 text-center">
-              <div className="flex items-center justify-center gap-2 text-primary-400">
-                <Bot size={16} />
-                <span className="shell-kicker">Specialists Online</span>
-              </div>
-              <p className="mt-4 text-[2rem] font-display font-semibold text-text-primary">
-                {agents.length}
-              </p>
-              <p className="mt-2 max-w-[16rem] text-sm leading-7 text-text-secondary">
-                Domain-focused agents ready to take the lead on your next task.
-              </p>
-            </div>
-
-            <div className="shell-panel-muted space-y-3 px-6 py-6 sm:col-span-2">
-              <div className="flex items-center gap-2 text-primary-400">
-                {starterProjectGrant ? <FolderOpen size={16} /> : <MessageSquareText size={16} />}
-                <span className="shell-kicker">Current State</span>
-              </div>
-              <div className="space-y-2 text-sm leading-7 text-text-secondary">
-                <p>
-                  {hasConfiguredProvider
-                    ? 'You have at least one usable provider configured. Pick an agent below and move directly into chat.'
-                    : 'No usable provider is configured yet. Set up a gateway first, then launch straight into an agent workspace.'}
+              <div className="space-y-4">
+                <p className="shell-kicker text-primary-300">Unified Agent Command Deck</p>
+                <h2 className="max-w-[11ch] text-[2.75rem] font-display font-semibold leading-[1.02] text-text-primary md:text-[3.15rem]">
+                  Build with the right specialist, not a blank screen.
+                </h2>
+                <p className="max-w-[35rem] text-[15px] leading-8 text-text-secondary">
+                  Pantheon Forge keeps your specialists, gateways, project grants, and recent
+                  threads aligned inside one calm command surface, so each session feels like a
+                  deliberate mission start instead of a cold blank canvas.
                 </p>
-                {starterProjectGrant ? (
-                  <p>
-                    Starter project: <span className="text-text-primary">{starterProjectGrant.displayName}</span>{' '}
-                    with read-only access for the next new conversation.
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <Link href="/chat/" className="cyber-button inline-flex items-center gap-2 text-sm">
+                  Enter Chat Workspace
+                  <ArrowRight size={16} />
+                </Link>
+                <OpenProjectButton
+                  label="Open Project"
+                  onGranted={async (grant) => {
+                    await setStarterProjectId(grant.id);
+                  }}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-border-highlight bg-surface-secondary px-5 py-3 text-sm text-text-primary transition-all duration-200 hover:border-primary-500/40 hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-40"
+                />
+                <Link
+                  href="/settings/"
+                  className="inline-flex items-center gap-2 rounded-2xl border border-border-highlight bg-surface-secondary px-5 py-3 text-sm text-text-primary transition-all duration-200 hover:border-primary-500/40 hover:bg-surface-hover"
+                >
+                  Configure Gateways
+                </Link>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="shell-panel-muted px-5 py-4">
+                  <div className="flex items-center gap-2 text-primary-400">
+                    <FolderOpen size={15} />
+                    <span className="shell-kicker">Project Scope</span>
+                  </div>
+                  <p className="mt-3 text-sm leading-7 text-text-secondary">
+                    {starterProjectGrant ? (
+                      <>
+                        Next chat opens with{' '}
+                        <span className="text-text-primary">
+                          {starterProjectGrant.displayName}
+                        </span>{' '}
+                        attached for read-only file access.
+                      </>
+                    ) : (
+                      'Open a project when you want the next conversation to include approved read-only file access.'
+                    )}
                   </p>
-                ) : (
-                  <p>No starter project is selected yet. Open a project if you want file tools available in the next thread.</p>
-                )}
+                </div>
+
+                <div className="shell-panel-muted px-5 py-4">
+                  <div className="flex items-center gap-2 text-primary-400">
+                    <MessageSquareText size={15} />
+                    <span className="shell-kicker">Mission Start</span>
+                  </div>
+                  <p className="mt-3 text-sm leading-7 text-text-secondary">
+                    Choose a specialist below, then move directly into the workspace with routing,
+                    project context, and recent threads already in view.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid auto-rows-fr gap-3 sm:grid-cols-2">
+              <div className="shell-panel-muted flex h-full flex-col items-center justify-center px-6 py-6 text-center">
+                <div className="flex items-center justify-center gap-2 text-primary-400">
+                  <PlugZap size={16} />
+                  <span className="shell-kicker">Provider Readiness</span>
+                </div>
+                <p className="mt-4 text-[2.1rem] font-display font-semibold text-text-primary">
+                  {configuredProviderCount}
+                </p>
+                <p className="mt-2 max-w-[15rem] text-sm leading-7 text-text-secondary">
+                  Available gateways configured and ready for routing.
+                </p>
+              </div>
+
+              <div className="shell-panel-muted flex h-full flex-col items-center justify-center px-6 py-6 text-center">
+                <div className="flex items-center justify-center gap-2 text-primary-400">
+                  <Bot size={16} />
+                  <span className="shell-kicker">Specialists Online</span>
+                </div>
+                <p className="mt-4 text-[2.1rem] font-display font-semibold text-text-primary">
+                  {agents.length}
+                </p>
+                <p className="mt-2 max-w-[15rem] text-sm leading-7 text-text-secondary">
+                  Domain-focused agents ready to take the lead on your next task.
+                </p>
+              </div>
+
+              <div className="shell-panel-muted space-y-3 px-6 py-6 sm:col-span-2">
+                <div className="flex items-center gap-2 text-primary-400">
+                  {starterProjectGrant ? <FolderOpen size={16} /> : <MessageSquareText size={16} />}
+                  <span className="shell-kicker">Current State</span>
+                </div>
+                <div className="space-y-2 text-sm leading-7 text-text-secondary">
+                  <p>
+                    {hasConfiguredProvider
+                      ? 'At least one usable gateway is online. Pick a specialist and move directly into the live workspace.'
+                      : 'No usable provider is configured yet. Set up a gateway first, then launch into a specialist workspace.'}
+                  </p>
+                  {starterProjectGrant ? (
+                    <p>
+                      Starter project armed:{' '}
+                      <span className="text-text-primary">{starterProjectGrant.displayName}</span>
+                    </p>
+                  ) : (
+                    <p>No starter project is armed yet for the next conversation.</p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -190,8 +233,9 @@ export default function Home() {
                   <Link
                     key={agent.id}
                     href={`/chat/?agent=${agent.id}`}
-                    className="group shell-panel-muted flex h-full px-5 py-5 transition-all duration-200 hover:border-primary-500/30 hover:bg-surface-hover"
+                    className="group shell-panel-muted relative flex h-full overflow-hidden px-5 py-5 transition-all duration-200 hover:border-primary-500/30 hover:bg-surface-hover"
                   >
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-primary-500/10 via-transparent to-transparent opacity-80 transition-opacity duration-200 group-hover:opacity-100" />
                     <div className="flex w-full items-start gap-4">
                       <div className={`rounded-2xl bg-gradient-to-br ${meta.accent} p-3 text-primary-400`}>
                         <Icon size={18} />
@@ -272,12 +316,13 @@ export default function Home() {
               <p className="shell-kicker text-primary-400">Operational Notes</p>
               <div className="mt-4 space-y-3 text-sm leading-7 text-text-secondary">
                 <p>
-                  The shell is optimized for a roomy desktop workflow: stable content columns,
-                  calmer panel structure, and faster navigation between home, chat, and settings.
+                  The command deck now keeps brand, routing, project scope, and recent work inside
+                  one shared shell, so every surface feels like part of the same station instead of
+                  separate pages stitched together.
                 </p>
                 <p>
-                  Use the rail toggle on the left to compact navigation when the browser window gets
-                  tighter, or let it auto-compact below the desktop threshold.
+                  Use the rail toggle on the left to switch between expanded and compact navigation,
+                  or let the shell auto-compact itself below the desktop threshold.
                 </p>
               </div>
             </section>

@@ -21,7 +21,8 @@ export default function ProjectPermissionDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-primary/60 px-4 backdrop-blur-md">
-      <div className="approval-dialog w-full max-w-[620px] rounded-[22px] px-6 py-6 shadow-[0_28px_80px_rgba(0,0,0,0.55)]">
+      <div className="approval-dialog relative w-full max-w-[620px] overflow-hidden rounded-[22px] px-6 py-6 shadow-[0_28px_80px_rgba(0,0,0,0.55)]">
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-44 bg-[radial-gradient(circle_at_left,rgba(0,245,255,0.12),transparent_68%)]" />
         <div className="flex items-start gap-4">
           <div className="shell-icon-chip mt-1">
             <FolderOpen size={18} />

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUpRight, CheckCircle2, Sparkles } from 'lucide-react';
+import { ArrowUpRight, CheckCircle2, FolderTree, Sparkles } from 'lucide-react';
 import { useChatStore } from '@/stores/chat';
 import { useProjectAccessStore } from '@/stores/project-access';
 import { useSettingsStore } from '@/stores/settings';
@@ -127,23 +127,38 @@ export default function ChatInput() {
               );
             })}
           </div>
-          <p className="text-xs leading-6 text-text-muted">{toolMessage}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            {projectGrant ? (
+              <span
+                title={projectGrant.path}
+                className="shell-pill border-accent-500/20 bg-accent-500/8 text-accent-500"
+              >
+                <FolderTree size={12} />
+                {projectGrant.displayName}
+              </span>
+            ) : null}
+            <p className="text-xs leading-6 text-text-muted">{toolMessage}</p>
+          </div>
         </div>
 
         <div
           title={activeRouteTitle}
-          className="shell-panel-muted flex min-h-[96px] w-full flex-col items-center justify-center px-4 py-4 text-center lg:ml-auto lg:max-w-[220px]"
+          className="shell-panel-muted relative flex min-h-[104px] w-full flex-col items-center justify-center overflow-hidden px-4 py-4 text-center lg:ml-auto lg:max-w-[220px]"
         >
+          <div className="pointer-events-none absolute inset-x-6 bottom-0 h-12 bg-gradient-to-t from-primary-500/10 to-transparent" />
           <div className="flex items-center justify-center gap-2 text-accent-500">
             <CheckCircle2 size={14} />
             <span className="shell-kicker text-accent-500">Active Route</span>
           </div>
-          <p className="mt-2 text-sm font-semibold text-text-primary">
+          <p className="mt-3 text-[13px] font-semibold uppercase tracking-[0.14em] text-text-secondary">
+            {resolvedProvider ? 'Provider' : 'Status'}
+          </p>
+          <p className="mt-1 text-sm font-semibold text-text-primary">
             {resolvedProvider ? resolvedProviderMeta?.name : 'No provider'}
           </p>
           <p
             title={resolvedProvider ? model : undefined}
-            className="mt-1 max-w-full truncate text-[10px] leading-5 text-text-secondary"
+            className="mt-1 max-w-full truncate text-[11px] leading-5 text-text-secondary"
           >
             {resolvedProvider ? model : 'Configure a usable provider in Settings to send messages.'}
           </p>

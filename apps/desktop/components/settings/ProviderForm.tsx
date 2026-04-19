@@ -62,7 +62,8 @@ export default function ProviderForm({ providerId }: ProviderFormProps) {
   if (provider.status === 'planned') {
     return (
       <div className="grid gap-4 lg:grid-cols-[1.08fr_0.92fr]">
-        <div className="shell-panel px-6 py-6">
+        <div className="shell-panel relative overflow-hidden px-6 py-6">
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-36 bg-[radial-gradient(circle_at_left,rgba(255,199,0,0.14),transparent_72%)]" />
           <div className="flex items-center gap-2 text-warning-500">
             <Sparkles size={15} />
             <span className="shell-kicker text-warning-500">Planned Integration</span>
@@ -189,7 +190,7 @@ export default function ProviderForm({ providerId }: ProviderFormProps) {
         </div>
       ) : null}
 
-      <div className="mt-auto flex flex-wrap items-center gap-3 border-t border-border-subtle pt-4">
+      <div className="shell-panel-muted mt-auto flex flex-wrap items-center gap-3 border-t border-border-subtle px-4 py-4">
         <button
           type="submit"
           disabled={saving || !apiKey}

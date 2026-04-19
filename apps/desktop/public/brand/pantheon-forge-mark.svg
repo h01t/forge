@@ -1,0 +1,35 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="pf-ring" x1="96" y1="88" x2="418" y2="428" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#B6FEFF"/>
+      <stop offset="0.48" stop-color="#6AF7FF"/>
+      <stop offset="1" stop-color="#25D8F5"/>
+    </linearGradient>
+    <radialGradient id="pf-bg" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(256 196) rotate(90) scale(246 252)">
+      <stop stop-color="#141A24"/>
+      <stop offset="0.72" stop-color="#0A1018"/>
+      <stop offset="1" stop-color="#070B12"/>
+    </radialGradient>
+    <filter id="pf-glow" x="38" y="30" width="436" height="452" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.192157 0 0 0 0 0.929412 0 0 0 0 1 0 0 0 0.3 0"/>
+      <feBlend in="SourceGraphic" mode="screen"/>
+    </filter>
+  </defs>
+
+  <rect x="72" y="72" width="368" height="368" rx="76" fill="url(#pf-bg)"/>
+  <rect x="73.5" y="73.5" width="365" height="365" rx="74.5" stroke="#D9F7FF" stroke-opacity="0.18"/>
+
+  <g filter="url(#pf-glow)">
+    <circle cx="256" cy="256" r="126" stroke="url(#pf-ring)" stroke-width="22"/>
+
+    <path d="M170 188H256V220H202V244H246V276H202V324H170V188Z" fill="url(#pf-ring)"/>
+    <path d="M262 188H342V220H294V244H334V276H294V324H262V188Z" fill="url(#pf-ring)"/>
+    <rect x="240" y="168" width="32" height="188" rx="14" fill="url(#pf-ring)"/>
+
+    <path d="M255 112L267 146L255 188L243 146L255 112Z" fill="url(#pf-ring)"/>
+    <path d="M255 324L267 366L255 400L243 366L255 324Z" fill="url(#pf-ring)"/>
+    <path d="M400 255L366 267L324 255L366 243L400 255Z" fill="url(#pf-ring)"/>
+    <path d="M112 255L146 267L188 255L146 243L112 255Z" fill="url(#pf-ring)"/>
+  </g>
+</svg>
