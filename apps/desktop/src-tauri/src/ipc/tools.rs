@@ -5,10 +5,13 @@ use crate::llm::{
 use crate::storage::{
     NewToolExecution, ProjectAccessGrant, ToolExecutionLog, ToolExecutionResultPayload,
 };
-use crate::tools::{execute_tool, resolve_executable_tools, AgentToolSpec, ToolContext};
+use crate::tools::{
+    execute_tool, preview_tool, resolve_executable_tools, AgentToolSpec, ToolApprovalPreview,
+    ToolContext,
+};
 use crate::AppState;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{json, Value};
 use std::time::Instant;
 use tauri::{Emitter, State};
 
@@ -34,6 +37,8 @@ pub struct ToolApprovalRequestPayload {
     pub permission_level: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub preview: Option<ToolApprovalPreview>,
     pub timestamp: i64,
 }
 
@@ -87,6 +92,24 @@ fn build_tool_context(grant: &ProjectAccessGrant) -> ToolContext {
     }
 }
 
+fn recommended_turn_max_tokens(has_tool_definitions: bool) -> Option<u32> {
+    if has_tool_definitions {
+        Some(8192)
+    } else {
+        None
+    }
+}
+
+fn invalid_tool_arguments_message(tool_id: &str, error: &str) -> String {
+    if tool_id == "write-file" && error.contains("EOF while parsing a string") {
+        return "The write-file call was truncated before the JSON content string finished. Retry the write-file tool with a complete JSON object that includes the full `path` and full `content` fields. Do not stop early, and avoid extra narration outside the tool call.".to_string();
+    }
+
+    format!(
+        "Tool request rejected before execution because the arguments were not valid JSON ({error}). Re-issue the tool call with a complete, valid JSON object."
+    )
+}
+
 #[tauri::command]
 pub async fn respond_to_tool_approval(
     approval: ToolApprovalDecisionPayload,
@@ -111,6 +134,18 @@ pub async fn list_tool_executions(
     state
         .storage
         .list_tool_executions(&conversation_id)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn list_recent_tool_executions(
+    limit: Option<i64>,
+    state: State<'_, AppState>,
+) -> Result<Vec<ToolExecutionLog>, String> {
+    state
+        .storage
+        .list_recent_tool_executions(limit.unwrap_or(12))
         .await
         .map_err(|e| e.to_string())
 }
@@ -158,9 +193,10 @@ pub async fn run_agent_turn(
             executable_tools
                 .iter()
                 .map(|tool| tool.definition.clone())
-                .collect::<Vec<_>>(),
+            .collect::<Vec<_>>(),
         )
     };
+    let turn_max_tokens = recommended_turn_max_tokens(tool_definitions.is_some());
 
     let provider = ProviderFactory::create_provider(&config).map_err(|e| e.to_string())?;
 
@@ -185,7 +221,7 @@ pub async fn run_agent_turn(
             messages: turn_messages.clone(),
             model: model.clone(),
             temperature: None,
-            max_tokens: None,
+            max_tokens: turn_max_tokens,
             top_p: None,
             stream: Some(false),
             tools: tool_definitions.clone(),
@@ -253,9 +289,86 @@ pub async fn run_agent_turn(
                 .iter()
                 .find(|tool| tool.tool_id == tool_call.function.name)
                 .ok_or_else(|| format!("Tool {} is not available", tool_call.function.name))?;
-            let parameters: Value = serde_json::from_str(&tool_call.function.arguments)
-                .map_err(|e| format!("Invalid tool call parameters: {}", e))?;
             let project_path = tool_context.project_root.to_string_lossy().to_string();
+            let parameters = match serde_json::from_str::<Value>(&tool_call.function.arguments) {
+                Ok(parameters) => parameters,
+                Err(error) => {
+                    let error_message = format!("Invalid tool call parameters: {}", error);
+                    let log = state
+                        .storage
+                        .create_tool_execution(NewToolExecution {
+                            conversation_id: &conversation_id,
+                            request_id: &request_id,
+                            tool_call_id: &tool_call.id,
+                            agent_id: &agent_id,
+                            tool_id: &executable.tool_id,
+                            tool_name: &executable.tool_name,
+                            risk_level: executable.risk_level.as_str(),
+                            parameters: json!({
+                                "rawArguments": tool_call.function.arguments,
+                                "parseError": error_message,
+                            }),
+                            project_access_id: Some(tool_context.project_access_id.as_str()),
+                            project_display_name: Some(tool_context.project_display_name.as_str()),
+                            project_path: Some(project_path.as_str()),
+                            permission_level: Some(tool_context.permission_level.as_str()),
+                        })
+                        .await
+                        .map_err(|e| e.to_string())?;
+
+                    let result = ToolExecutionResultPayload {
+                        success: false,
+                        output: None,
+                        error: Some(error_message.clone()),
+                        execution_time: 0,
+                        summary: Some(format!("Invalid parameters for {}", executable.tool_name)),
+                        metadata: Some(json!({
+                            "rawArguments": tool_call.function.arguments,
+                        })),
+                    };
+                    state
+                        .storage
+                        .update_tool_execution_status(
+                            &log.id,
+                            "failed",
+                            Some(&result),
+                            Some(&error_message),
+                        )
+                        .await
+                        .map_err(|e| e.to_string())?;
+                    let final_log = state
+                        .storage
+                        .get_tool_execution(&log.id)
+                        .await
+                        .map_err(|e| e.to_string())?;
+                    let tool_message = Message {
+                        role: MessageRole::Tool,
+                        content: invalid_tool_arguments_message(&executable.tool_id, &error_message),
+                        tool_calls: None,
+                        tool_call_id: Some(tool_call.id.clone()),
+                    };
+                    state
+                        .storage
+                        .add_message(&conversation_id, &tool_message)
+                        .await
+                        .map_err(|e| e.to_string())?;
+                    turn_messages.push(tool_message);
+
+                    emit_turn_event(
+                        &app_handle,
+                        AgentTurnPayload {
+                            request_id: request_id.clone(),
+                            event_type: "tool_finished".into(),
+                            delta: None,
+                            finish_reason: None,
+                            error: None,
+                            approval_request: None,
+                            tool_execution: Some(final_log),
+                        },
+                    );
+                    continue;
+                }
+            };
             let log = state
                 .storage
                 .create_tool_execution(NewToolExecution {
@@ -275,6 +388,61 @@ pub async fn run_agent_turn(
                 .await
                 .map_err(|e| e.to_string())?;
 
+            let preview = match preview_tool(&executable.tool_id, parameters.clone(), tool_context).await
+            {
+                Ok(preview) => preview,
+                Err(error_message) => {
+                    let result = ToolExecutionResultPayload {
+                        success: false,
+                        output: None,
+                        error: Some(error_message.clone()),
+                        execution_time: 0,
+                        summary: Some(format!("Rejected {}", executable.tool_name)),
+                        metadata: None,
+                    };
+                    state
+                        .storage
+                        .update_tool_execution_status(
+                            &log.id,
+                            "failed",
+                            Some(&result),
+                            Some(&error_message),
+                        )
+                        .await
+                        .map_err(|e| e.to_string())?;
+                    let final_log = state
+                        .storage
+                        .get_tool_execution(&log.id)
+                        .await
+                        .map_err(|e| e.to_string())?;
+                    let tool_message = Message {
+                        role: MessageRole::Tool,
+                        content: format!("Tool request failed before approval: {}", error_message),
+                        tool_calls: None,
+                        tool_call_id: Some(tool_call.id.clone()),
+                    };
+                    state
+                        .storage
+                        .add_message(&conversation_id, &tool_message)
+                        .await
+                        .map_err(|e| e.to_string())?;
+                    turn_messages.push(tool_message);
+                    emit_turn_event(
+                        &app_handle,
+                        AgentTurnPayload {
+                            request_id: request_id.clone(),
+                            event_type: "tool_finished".into(),
+                            delta: None,
+                            finish_reason: None,
+                            error: None,
+                            approval_request: None,
+                            tool_execution: Some(final_log),
+                        },
+                    );
+                    continue;
+                }
+            };
+
             let approval_id = log.id.clone();
             let approval_request = ToolApprovalRequestPayload {
                 id: approval_id.clone(),
@@ -291,6 +459,7 @@ pub async fn run_agent_turn(
                 project_path: Some(project_path),
                 permission_level: Some(tool_context.permission_level.clone()),
                 description: Some(executable.definition.function.description.clone()),
+                preview,
                 timestamp: log.timestamp,
             };
 
@@ -370,13 +539,15 @@ pub async fn run_agent_turn(
                 );
 
                 let started_at = Instant::now();
-                match execute_tool(&executable.tool_id, parameters.clone(), tool_context) {
+                match execute_tool(&executable.tool_id, parameters.clone(), tool_context).await {
                     Ok(output) => {
                         let result = ToolExecutionResultPayload {
                             success: true,
                             output: Some(output.output.clone()),
                             error: None,
                             execution_time: started_at.elapsed().as_millis() as u64,
+                            summary: output.summary.clone(),
+                            metadata: output.metadata.clone(),
                         };
                         state
                             .storage
@@ -404,6 +575,8 @@ pub async fn run_agent_turn(
                             output: None,
                             error: Some(error_message.clone()),
                             execution_time: started_at.elapsed().as_millis() as u64,
+                            summary: Some(format!("Failed {}", executable.tool_name)),
+                            metadata: None,
                         };
                         state
                             .storage
@@ -437,6 +610,8 @@ pub async fn run_agent_turn(
                     output: None,
                     error: Some("Denied by user".to_string()),
                     execution_time: 0,
+                    summary: Some(format!("Denied {}", executable.tool_name)),
+                    metadata: None,
                 };
                 state
                     .storage

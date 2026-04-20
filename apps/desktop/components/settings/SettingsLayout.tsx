@@ -8,6 +8,7 @@ import ProjectAccessManager from '@/components/projects/ProjectAccessManager';
 import { useSettingsStore } from '@/stores/settings';
 import AppShell from '@/components/layout/AppShell';
 import ProviderForm from './ProviderForm';
+import ToolControlPanel from './ToolControlPanel';
 
 const providerIcons: Record<ProviderId, ComponentType<{ size?: number; className?: string }>> = {
   anthropic: Brain,
@@ -41,6 +42,7 @@ export default function SettingsLayout() {
       stageWidth="settings"
     >
       <div className="space-y-5">
+        <ToolControlPanel />
         <ProjectAccessManager />
 
         <section className="shell-panel relative overflow-hidden px-4 py-4 md:px-5 md:py-5">

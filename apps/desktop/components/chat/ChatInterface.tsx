@@ -14,7 +14,12 @@ import ChatMessage from './ChatMessage';
 import StreamingIndicator from './StreamingIndicator';
 import ToolActivity from './ToolActivity';
 
-const TOOL_ENABLED_IDS = new Set(['read-file', 'search-files']);
+const TOOL_ENABLED_IDS = new Set([
+  'read-file',
+  'search-files',
+  'write-file',
+  'execute-command',
+]);
 const TERMINAL_TOOL_STATUSES = new Set(['succeeded', 'denied', 'failed']);
 const AUTO_FOLLOW_THRESHOLD_PX = 48;
 
@@ -77,9 +82,9 @@ export default function ChatInterface({ agent }: ChatInterfaceProps) {
   const workspaceStateMessage = !hasUsableProvider
     ? 'No usable provider is configured yet. Open Settings from the rail to connect a gateway.'
     : agentHasSupportedTools && !projectGrant
-      ? 'A provider is ready. Attach a project above to unlock read-only file tools.'
+      ? 'A provider is ready. Attach a project above to unlock project-scoped tools for this thread.'
       : toolsReady
-        ? `Provider routing and read-only tools are ready inside ${projectGrant?.displayName ?? 'the selected project'}.`
+        ? `Provider routing and approval-gated tools are ready inside ${projectGrant?.displayName ?? 'the selected project'}.`
         : 'Routing is ready. This specialist is currently operating in chat-only mode.';
 
   const agentPreferredProvider = useMemo(() => {
@@ -248,7 +253,7 @@ export default function ChatInterface({ agent }: ChatInterfaceProps) {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="shell-pill border-primary-500/20 bg-primary-500/8 text-primary-300">
                   {enabledToolCount > 0
-                    ? `${enabledToolCount} read-only tool${enabledToolCount === 1 ? '' : 's'}`
+                    ? `${enabledToolCount} scoped tool${enabledToolCount === 1 ? '' : 's'}`
                     : 'Chat-only specialist'}
                 </span>
                 {agentPreferredProvider ? (

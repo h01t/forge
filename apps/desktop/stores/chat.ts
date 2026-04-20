@@ -23,7 +23,12 @@ import { useAgentStore } from './agents';
 import { useConversationsStore } from './conversations';
 import { useProjectAccessStore } from './project-access';
 
-const SUPPORTED_TOOL_IDS = new Set(['read-file', 'search-files']);
+const SUPPORTED_TOOL_IDS = new Set([
+  'read-file',
+  'search-files',
+  'write-file',
+  'execute-command',
+]);
 
 export interface DisplayMessage {
   id: string;

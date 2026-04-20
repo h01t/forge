@@ -79,6 +79,10 @@ pub struct ToolExecutionResultPayload {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
     pub execution_time: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub summary: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<serde_json::Value>,
 }
 
 /// Tool execution audit log
@@ -579,6 +583,20 @@ impl StorageManager {
         rows.into_iter().map(parse_tool_execution_row).collect()
     }
 
+    pub async fn list_recent_tool_executions(
+        &self,
+        limit: i64,
+    ) -> Result<Vec<ToolExecutionLog>, StorageError> {
+        let rows = sqlx::query(
+            "SELECT * FROM tool_executions ORDER BY updated_at DESC, created_at DESC LIMIT ?",
+        )
+        .bind(limit.max(1))
+        .fetch_all(&self.pool)
+        .await?;
+
+        rows.into_iter().map(parse_tool_execution_row).collect()
+    }
+
     // === Project access grants ===
 
     pub async fn save_project_access_grant(
@@ -879,6 +897,8 @@ mod tests {
                     output: Some("done".into()),
                     error: None,
                     execution_time: 12,
+                    summary: Some("Read README.md".into()),
+                    metadata: Some(serde_json::json!({ "path": "README.md" })),
                 }),
                 None,
             )
@@ -911,6 +931,71 @@ mod tests {
                 .and_then(|result| result.output.clone()),
             Some("done".into())
         );
+
+        drop(manager);
+        std::fs::remove_file(db_path).ok();
+        std::fs::remove_dir_all(project_dir).ok();
+    }
+
+    #[tokio::test]
+    async fn list_recent_tool_executions_returns_latest_first() {
+        let project_dir = std::env::temp_dir().join(format!(
+            "pantheon-forge-recent-tool-log-project-{}",
+            uuid::Uuid::new_v4()
+        ));
+        std::fs::create_dir_all(&project_dir).unwrap();
+
+        let db_path = test_db_path("recent-tool-execution");
+        let manager = StorageManager::new(db_path.clone()).await.unwrap();
+        let grant = manager
+            .save_project_access_grant(project_dir.to_string_lossy().as_ref(), "read")
+            .await
+            .unwrap();
+        let conversation = manager
+            .create_conversation("software-engineer", "Recent tool execution test", Some(&grant.id))
+            .await
+            .unwrap();
+
+        let first = manager
+            .create_tool_execution(NewToolExecution {
+                conversation_id: &conversation.id,
+                request_id: "request-1",
+                tool_call_id: "call-1",
+                agent_id: "software-engineer",
+                tool_id: "read-file",
+                tool_name: "Read File",
+                risk_level: "low",
+                parameters: serde_json::json!({ "path": "README.md" }),
+                project_access_id: Some(&grant.id),
+                project_display_name: Some(&grant.display_name),
+                project_path: Some(&grant.path),
+                permission_level: Some(&grant.permission_level),
+            })
+            .await
+            .unwrap();
+        tokio::time::sleep(std::time::Duration::from_millis(2)).await;
+        let second = manager
+            .create_tool_execution(NewToolExecution {
+                conversation_id: &conversation.id,
+                request_id: "request-2",
+                tool_call_id: "call-2",
+                agent_id: "software-engineer",
+                tool_id: "write-file",
+                tool_name: "Write File",
+                risk_level: "medium",
+                parameters: serde_json::json!({ "path": "README.md", "content": "hello" }),
+                project_access_id: Some(&grant.id),
+                project_display_name: Some(&grant.display_name),
+                project_path: Some(&grant.path),
+                permission_level: Some(&grant.permission_level),
+            })
+            .await
+            .unwrap();
+
+        let recent = manager.list_recent_tool_executions(2).await.unwrap();
+        assert_eq!(recent.len(), 2);
+        assert_eq!(recent[0].id, second.id);
+        assert_eq!(recent[1].id, first.id);
 
         drop(manager);
         std::fs::remove_file(db_path).ok();

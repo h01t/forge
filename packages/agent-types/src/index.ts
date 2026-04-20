@@ -197,6 +197,14 @@ export interface ToolExecutionResult {
   output?: string;
   error?: string;
   executionTime: number;
+  summary?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ToolApprovalPreview {
+  kind: 'diff' | 'command' | 'text';
+  summary: string;
+  body?: string;
 }
 
 export interface ToolApprovalRequest {
@@ -214,6 +222,7 @@ export interface ToolApprovalRequest {
   projectPath?: string;
   permissionLevel?: ProjectPermissionLevel;
   description?: string;
+  preview?: ToolApprovalPreview;
   timestamp: number;
 }
 

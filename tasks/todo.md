@@ -20,12 +20,25 @@
 - [x] Show agent badge in ConversationList items
 - [x] Fix Suspense boundary for `useSearchParams` in Next.js 16
 
-## Phase 3: Tool System — NEXT
+## Phase 3: Tool System — COMPLETE
 
-- [ ] Design tool trait and registry (Rust)
-- [ ] Implement built-in tools (read, write, execute, search)
-- [ ] Build approval workflow system (emit event → wait for user response)
-- [ ] Create approval dialog UI component
-- [ ] Implement tool execution logging (write to `tool_executions` table)
-- [ ] Add risk assessment for tool calls
-- [ ] Create tool management UI
+- [x] Design tool trait and registry (Rust)
+- [x] Implement built-in tools (read, write, execute, search)
+- [x] Build approval workflow system (emit event → wait for user response)
+- [x] Create approval UI for tool requests
+- [x] Implement tool execution logging (write to `tool_executions` table)
+- [x] Add risk assessment for tool calls
+- [x] Add approval previews for writes and commands
+- [x] Create tool management UI
+
+## Phase 4: Provider Expansion — NEXT
+
+- [ ] Implement Ollama provider
+- [ ] Implement Google Gemini provider
+- [ ] Add provider-specific streaming tests
+- [ ] Improve structured IPC error responses
+
+## Later Specialist Tools
+
+- [ ] Implement `analyze-dependencies` for Cybersecurity Specialist
+- [ ] Implement `scan-network` for Cybersecurity Specialist

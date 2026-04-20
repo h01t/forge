@@ -282,7 +282,7 @@ impl ProviderFactory {
 - **Anthropic Claude** (`anthropic.rs`) - Implemented. Uses `/v1/messages` endpoint with Anthropic-specific SSE event types.
 - **OpenAI GPT** (`openai.rs`) - Implemented. Uses `/chat/completions` endpoint with SSE streaming.
 - **Google Gemini** - Planned. Will use Gemini API format.
-- **DeepSeek** - Planned. OpenAI-compatible API format.
+- **DeepSeek** - Implemented via the OpenAI-compatible provider path.
 - **Ollama** - Planned. Local inference via OpenAI-compatible endpoint.
 
 ### TypeScript Type System
@@ -483,7 +483,7 @@ pub struct ToolRequest {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq)]
 pub enum RiskLevel {
-    Low,      // Read-only operations
+    Low,      // Inspection operations
     Medium,   // Non-destructive writes
     High,     // File deletions, system changes
     Critical, // Network requests, external API calls
@@ -631,7 +631,7 @@ Use `sqlx` migrations instead of inline `CREATE TABLE IF NOT EXISTS`:
 src-tauri/migrations/
 ├── 20250101000001_init.sql          # conversations, messages, settings
 ├── 20250101000002_indexes.sql       # initial indexes
-├── 20250201000001_tool_executions.sql  # added in Phase 4
+├── 20250201000001_tool_executions.sql  # added in Phase 3
 └── 20250301000001_collaboration.sql    # added in Phase 5
 ```
 
@@ -864,27 +864,36 @@ export const cyberpunkTheme = {
 - [x] Display active agent name in chat header and message labels
 - [x] Show agent badge in ConversationList items
 
-### Phase 3: Tool System (Weeks 5-6)
+### Phase 3: Tool System (Weeks 5-6) — COMPLETE
 
 **Goal**: Safe tool execution with approval
 
-- [ ] Design tool trait and registry (Rust)
-- [ ] Implement built-in tools (read, write, execute, search)
-- [ ] Build approval workflow system (emit event → wait for user response)
-- [ ] Create approval dialog UI component
-- [ ] Implement tool execution logging (write to `tool_executions` table)
-- [ ] Add risk assessment for tool calls
-- [ ] Create tool management UI
+- [x] Design tool trait and registry (Rust)
+- [x] Implement built-in tools (`read-file`, `search-files`, `write-file`, `execute-command`)
+- [x] Build approval workflow system (emit event → wait for user response)
+- [x] Add approval UI attached to the chat composer
+- [x] Implement tool execution logging (write to `tool_executions` table)
+- [x] Add static risk assessment for tool calls
+- [x] Add richer approval previews for writes and commands
+- [x] Create tool management UI in Settings
+- [x] Scope tool availability to a conversation-bound project grant
+- [x] Persist recent execution history across conversations
 
-### Phase 4: Additional Providers (Weeks 7-8)
+### Phase 4: Additional Providers (Weeks 7-8) — NEXT
 
 **Goal**: Expand LLM provider coverage
 
-- [ ] Implement Google Gemini provider
-- [ ] Implement DeepSeek provider
 - [ ] Implement Ollama provider (local inference)
+- [ ] Implement Google Gemini provider
 - [ ] Add provider-specific streaming tests
 - [ ] Improve structured IPC error responses
+
+### Phase 4A: Specialist Tool Expansion
+
+**Goal**: Expand beyond the core file/command tool set
+
+- [ ] Implement `analyze-dependencies`
+- [ ] Implement `scan-network`
 
 ### Phase 5: Polish & Core Features (Weeks 9-10)
 

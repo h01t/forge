@@ -138,10 +138,10 @@ export default function Home() {
                         <span className="text-text-primary">
                           {starterProjectGrant.displayName}
                         </span>{' '}
-                        attached for read-only file access.
+                        attached as the scoped project for approved tool work.
                       </>
                     ) : (
-                      'Open a project when you want the next conversation to include approved read-only file access.'
+                      'Open a project when you want the next conversation to include project-scoped tool access.'
                     )}
                   </p>
                 </div>

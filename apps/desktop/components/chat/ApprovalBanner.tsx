@@ -30,6 +30,14 @@ export default function ApprovalBanner({
   }
 
   const riskClass = riskToneClasses[request.riskLevel] ?? 'risk-medium';
+  const previewTitle =
+    request.preview?.kind === 'diff'
+      ? 'Change Preview'
+      : request.preview?.kind === 'command'
+        ? 'Command Preview'
+        : request.preview?.kind === 'text'
+          ? 'Preview'
+          : null;
 
   return (
     <div
@@ -96,18 +104,39 @@ export default function ApprovalBanner({
             ) : null}
             {request.permissionLevel ? (
               <p className="mt-2 text-xs leading-6 text-text-muted">
-                Permission: {request.permissionLevel === 'read' ? 'Read-only' : request.permissionLevel}
+                Scope: {request.permissionLevel === 'read' ? 'Project boundary' : request.permissionLevel}
               </p>
             ) : null}
           </div>
         </div>
 
-        <div className="min-w-0">
-          <p className="shell-kicker text-text-muted">Parameters</p>
-          <pre className="mt-3 max-h-40 overflow-auto whitespace-pre-wrap break-words rounded-2xl border border-border-subtle bg-surface-primary/65 px-4 py-3 text-[12px] leading-6 text-text-secondary">
-            {JSON.stringify(request.parameters, null, 2)}
-          </pre>
-        </div>
+        {request.preview ? (
+          <div className="min-w-0">
+            <p className="shell-kicker text-text-muted">{previewTitle}</p>
+            <div className="mt-3 rounded-2xl border border-border-subtle bg-surface-primary/65 px-4 py-3">
+              <p className="text-sm leading-7 text-text-primary">{request.preview.summary}</p>
+              {request.preview.body ? (
+                <pre className="mt-3 max-h-44 overflow-auto whitespace-pre-wrap break-words text-[12px] leading-6 text-text-secondary">
+                  {request.preview.body}
+                </pre>
+              ) : null}
+            </div>
+          </div>
+        ) : (
+          <div className="min-w-0">
+            <p className="shell-kicker text-text-muted">Parameters</p>
+            <pre className="mt-3 max-h-40 overflow-auto whitespace-pre-wrap break-words rounded-2xl border border-border-subtle bg-surface-primary/65 px-4 py-3 text-[12px] leading-6 text-text-secondary">
+              {JSON.stringify(request.parameters, null, 2)}
+            </pre>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-4">
+        <p className="shell-kicker text-text-muted">Parameters</p>
+        <pre className="mt-3 max-h-36 overflow-auto whitespace-pre-wrap break-words rounded-2xl border border-border-subtle bg-surface-primary/65 px-4 py-3 text-[12px] leading-6 text-text-secondary">
+          {JSON.stringify(request.parameters, null, 2)}
+        </pre>
       </div>
     </div>
   );

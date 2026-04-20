@@ -16,6 +16,7 @@ import { PROVIDERS } from '@pantheon-forge/agent-types';
 
 export type {
   AgentTurnStreamPayload,
+  ApprovalStatus,
   ChatCompletionResponse,
   Conversation,
   Message,
@@ -26,11 +27,14 @@ export type {
   ProviderDefinition,
   ProviderId,
   ProviderStatus,
+  RiskLevel,
   StoredMessage,
   Tool,
   ToolApprovalRequest,
   ToolApprovalDecision,
+  ToolApprovalPreview,
   ToolExecutionLog,
+  ToolExecutionStatus,
 } from '@pantheon-forge/agent-types';
 export { PROVIDERS };
 
@@ -102,6 +106,12 @@ export async function listToolExecutions(
   conversationId: string,
 ): Promise<ToolExecutionLog[]> {
   return invoke('list_tool_executions', { conversationId });
+}
+
+export async function listRecentToolExecutions(
+  limit = 12,
+): Promise<ToolExecutionLog[]> {
+  return invoke('list_recent_tool_executions', { limit });
 }
 
 export async function storeProviderCredentials(

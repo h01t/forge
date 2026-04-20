@@ -77,6 +77,7 @@ pub fn run() {
             ipc::tools::run_agent_turn,
             ipc::tools::respond_to_tool_approval,
             ipc::tools::list_tool_executions,
+            ipc::tools::list_recent_tool_executions,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

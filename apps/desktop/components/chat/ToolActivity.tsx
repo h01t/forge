@@ -97,7 +97,9 @@ export default function ToolActivity({ execution, agentName }: ToolActivityProps
             ) : null}
             {execution.permissionLevel ? (
               <span className="shell-pill">
-                {execution.permissionLevel === 'read' ? 'Read-only' : execution.permissionLevel}
+                {execution.permissionLevel === 'read'
+                  ? 'Project scope'
+                  : execution.permissionLevel}
               </span>
             ) : null}
             {execution.result?.executionTime ? (
@@ -112,6 +114,15 @@ export default function ToolActivity({ execution, agentName }: ToolActivityProps
               <p className="shell-kicker text-text-muted">Granted Project</p>
               <p className="mt-2 break-all text-xs leading-6 text-text-secondary">
                 {execution.projectPath}
+              </p>
+            </div>
+          ) : null}
+
+          {execution.result?.summary ? (
+            <div className="mt-4 rounded-2xl border border-border-subtle bg-surface-primary/65 px-4 py-3">
+              <p className="shell-kicker text-text-muted">Summary</p>
+              <p className="mt-2 text-sm leading-7 text-text-primary">
+                {execution.result.summary}
               </p>
             </div>
           ) : null}

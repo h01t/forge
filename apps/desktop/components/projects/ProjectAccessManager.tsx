@@ -36,8 +36,9 @@ export default function ProjectAccessManager() {
             Remembered project grants
           </h2>
           <p className="mt-2 text-sm leading-7 text-text-secondary">
-            Grants are local to this app and read-only in this version. Each conversation can bind
-            one granted directory, and every tool call still asks for approval.
+            Grants are local to this app and define the directory boundary for tool requests. Each
+            conversation can bind one granted directory, and every file or command action still
+            asks for approval.
           </p>
         </div>
 
@@ -52,8 +53,8 @@ export default function ProjectAccessManager() {
 
       {grants.length === 0 ? (
         <div className="shell-panel-muted mt-5 px-5 py-5 text-sm leading-7 text-text-secondary">
-          No project grants yet. Open a directory to allow read-only file inspection tools inside
-          that specific project.
+          No project grants yet. Open a directory to make it available as an approval-scoped
+          project for agent tools.
         </div>
       ) : (
         <div className="mt-5 grid gap-3">
@@ -70,7 +71,7 @@ export default function ProjectAccessManager() {
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-sm font-medium text-text-primary">{grant.displayName}</p>
                     <span className="shell-pill border-accent-500/25 bg-accent-500/10 text-accent-500">
-                      {grant.permissionLevel === 'read' ? 'Read-only' : grant.permissionLevel}
+                      {grant.permissionLevel === 'read' ? 'Project scope' : grant.permissionLevel}
                     </span>
                     {isStarter ? (
                       <span className="shell-pill border-primary-500/25 bg-primary-500/10 text-primary-400">

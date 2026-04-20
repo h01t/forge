@@ -30,12 +30,12 @@ export default function ProjectPermissionDialog({
           <div className="min-w-0 flex-1">
             <p className="shell-kicker text-primary-400">Project Access</p>
             <h3 className="mt-2 text-[1.55rem] font-display font-semibold text-text-primary">
-              Grant read-only access
+              Grant project access
             </h3>
             <p className="mt-3 text-sm leading-7 text-text-secondary">
-              Pantheon Forge will remember this directory as a project the agent can inspect with
-              read-only tools. Tool calls inside the project will still require approval one by
-              one.
+              Pantheon Forge will remember this directory as the scoped project for future tool
+              requests. Reading, writing, and approved command actions still require confirmation
+              one call at a time.
             </p>
           </div>
         </div>
@@ -49,11 +49,11 @@ export default function ProjectPermissionDialog({
           <div className="shell-panel-muted px-4 py-4">
             <div className="flex items-center gap-2 text-accent-500">
               <ShieldCheck size={15} />
-              <span className="shell-kicker text-accent-500">Permission</span>
+              <span className="shell-kicker text-accent-500">Scope Model</span>
             </div>
-            <p className="mt-3 text-sm font-medium text-text-primary">Read-only</p>
+            <p className="mt-3 text-sm font-medium text-text-primary">Project-scoped approval</p>
             <p className="mt-2 text-xs leading-6 text-text-secondary">
-              File inspection only in this version.
+              Grants define the directory boundary. Each tool call still asks for approval.
             </p>
           </div>
         </div>
@@ -73,7 +73,7 @@ export default function ProjectPermissionDialog({
             disabled={saving}
             className="cyber-button text-sm disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {saving ? 'Granting…' : 'Grant Read-only Access'}
+            {saving ? 'Granting…' : 'Grant Project Access'}
           </button>
         </div>
       </div>

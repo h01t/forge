@@ -76,7 +76,7 @@ export default function ConversationProjectAccessCard({
         <span className="shell-pill border-accent-500/20 bg-accent-500/8 text-accent-500">
           {selectedGrant
             ? selectedGrant.permissionLevel === 'read'
-              ? 'Read-only'
+              ? 'Project scope'
               : selectedGrant.permissionLevel
             : 'No grant'}
         </span>
@@ -87,7 +87,7 @@ export default function ConversationProjectAccessCard({
           {selectedGrant
             ? `${selectedGrant.displayName} · ${selectedGrant.path}`
             : supportsTools
-              ? 'Attach a project to expose read-only file tools in this thread.'
+              ? 'Attach a project to expose project-scoped tools in this thread.'
               : 'Project access is optional for this specialist.'}
         </p>
       </div>

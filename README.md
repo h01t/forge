@@ -6,8 +6,9 @@ with specialized agents while keeping conversations and provider credentials
 on your own machine.
 
 Today, the project is best understood as a polished desktop command surface
-for agent-driven chat, provider routing, and local persistence. It is not yet
-a general-purpose autonomous tool-execution platform.
+for agent-driven chat, provider routing, approval-gated tools, and local
+persistence. It is not yet a broad autonomous agent platform with unrestricted
+tooling or provider parity across every planned integration.
 
 ## What It Does Today
 
@@ -23,6 +24,10 @@ Implemented capabilities:
 - `Specialized agents`: shared agent registry with Software Engineer and Cybersecurity Specialist definitions
 - `Streaming chat`: provider-backed message streaming with persisted conversations
 - `Provider routing`: Anthropic, OpenAI, and DeepSeek are usable today
+- `Approved tool execution`: project-scoped `read-file`, `search-files`, `write-file`, and curated `execute-command`
+- `Manual approvals`: every tool request is previewed and requires explicit user approval
+- `Project-scoped access`: conversations bind one remembered project grant at a time
+- `Tool audit trail`: tool executions are persisted and surfaced inline in chat plus Settings
 - `Truthful provider status`: Google and Ollama remain visible, but clearly marked as planned
 - `Local persistence`: SQLite stores conversations and app-level state
 - `Secure credentials`: API keys live in the OS keyring, not in SQLite
@@ -32,9 +37,9 @@ Implemented capabilities:
 
 These pieces are planned, but not implemented as product-ready features yet:
 
-- tool execution from agents
-- manual approval workflows for tool calls
 - multi-agent orchestration beyond selecting different specialist personas
+- broader tool coverage beyond the current read/write/search/curated-command set
+- specialist-only tools like dependency analysis and network scanning
 - broad provider coverage beyond the currently wired providers
 
 If you are looking for the architectural direction behind those future phases,
@@ -45,8 +50,8 @@ see [ultron.md](./ultron.md).
 Pantheon Forge is designed around a desktop-first workflow:
 
 - `Launchpad` is the entry surface for orientation and agent selection
-- `Chat` is the main working surface, with conversations, streaming responses, and provider-aware routing
-- `Settings` is where credentials and provider defaults are managed
+- `Chat` is the main working surface, with conversations, streaming responses, provider-aware routing, and approval-gated tool use
+- `Settings` is where credentials, project grants, and tool control are managed
 
 The UI is intentionally local-app oriented rather than web-dashboard oriented:
 it uses a unified shell, a mature cyberpunk visual system, and a Tauri-native
@@ -179,14 +184,16 @@ What is stable now:
 - provider settings flow
 - persisted chat conversations
 - agent registry integration
+- project-scoped tool execution with approval
+- global tool execution history and control-plane UI
 - truthful provider availability in the UI
 - local credential handling
 
 What is next:
 
-- Phase 3 tool system work
-- explicit approval flows
-- deeper agent execution capabilities
+- Phase 4 provider expansion
+- specialist-only tool additions
+- deeper agent execution capabilities beyond the curated tool set
 
 ## Why This Repo Exists
 
@@ -195,7 +202,7 @@ The project is aiming for a desktop-native agent environment where:
 - the user owns the runtime and the data
 - agent personas are explicit and inspectable
 - provider credentials stay local
-- future tool execution can happen inside a safer, approval-oriented shell
+- tool execution happens inside a safer, approval-oriented shell
 
 The current codebase already delivers the local workspace and provider/chat
 foundation that those later capabilities will build on.
