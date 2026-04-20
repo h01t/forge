@@ -1,4 +1,4 @@
-use crate::credentials::get_credential_manager;
+use crate::credentials::{get_credential_manager, CredentialError};
 use crate::llm::{
     ChatCompletionRequest, ChatCompletionResponse, LLMConfig, Message, ProviderFactory, ProviderId,
     StreamEvent,
@@ -7,6 +7,20 @@ use crate::AppState;
 use futures_util::StreamExt;
 use std::pin::Pin;
 use tauri::{Emitter, State};
+
+fn credential_error_message(provider_id: ProviderId, error: CredentialError) -> String {
+    match error {
+        CredentialError::NotFound(_) => match provider_id {
+            ProviderId::Google => {
+                "Google provider is not configured. Add a Google API key in Provider Settings."
+                    .to_string()
+            }
+            ProviderId::Ollama => "Ollama provider is not configured. Save an Ollama gateway in Provider Settings. API keys are optional, but the base URL and model should be configured.".to_string(),
+            _ => format!("Failed to get credentials: Credential not found: {}", provider_id.as_str()),
+        },
+        other => format!("Failed to get credentials: {}", other),
+    }
+}
 
 #[tauri::command]
 pub async fn chat_completion(
@@ -23,7 +37,7 @@ pub async fn chat_completion(
     let cred_manager = get_credential_manager();
     let credential = cred_manager
         .get_provider(provider_enum)
-        .map_err(|e| format!("Failed to get credentials: {}", e))?;
+        .map_err(|e| credential_error_message(provider_enum, e))?;
 
     let config = LLMConfig {
         provider_id: provider_enum,
@@ -80,7 +94,7 @@ pub async fn stream_chat_completion(
     let cred_manager = get_credential_manager();
     let credential = cred_manager
         .get_provider(provider_enum)
-        .map_err(|e| format!("Failed to get credentials: {}", e))?;
+        .map_err(|e| credential_error_message(provider_enum, e))?;
 
     let config = LLMConfig {
         provider_id: provider_enum,

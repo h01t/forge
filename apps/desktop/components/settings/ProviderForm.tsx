@@ -14,6 +14,9 @@ export default function ProviderForm({ providerId }: ProviderFormProps) {
   const provider = PROVIDERS.find((item) => item.id === providerId)!;
   const { providers, saveProvider, removeProvider } = useSettingsStore();
   const existing = providers[providerId]?.credential;
+  const isOllama = providerId === 'ollama';
+  const isGoogle = providerId === 'google';
+  const apiKeyRequired = !isOllama;
 
   const [apiKeyDraft, setApiKey] = useState<string | null>(null);
   const [baseUrlDraft, setBaseUrl] = useState<string | null>(null);
@@ -26,6 +29,24 @@ export default function ProviderForm({ providerId }: ProviderFormProps) {
   const apiKey = apiKeyDraft ?? existing?.api_key ?? '';
   const baseUrl = baseUrlDraft ?? existing?.base_url ?? '';
   const model = modelDraft ?? existing?.model ?? provider.defaultModel;
+
+  const apiKeyLabel = apiKeyRequired ? 'API Key' : 'API Key (Optional)';
+  const apiKeyPlaceholder = isOllama
+    ? 'Optional for local Ollama or proxied gateways'
+    : `Enter ${provider.name} API key`;
+  const baseUrlPlaceholder = isOllama
+    ? 'http://localhost:11434/v1'
+    : isGoogle
+      ? 'Optional advanced endpoint override'
+      : 'https://api.example.com/v1';
+  const credentialDescription = isOllama
+    ? 'Gateway settings are stored locally in the OS keyring. Local Ollama does not require an API key, but remote or proxied gateways can still use one.'
+    : 'Credentials are stored locally in the OS keyring and only used by the desktop shell.';
+  const routingDescription = isGoogle
+    ? 'Set the default Gemini model and keep the gateway status readable from the workspace. Base URL overrides are optional.'
+    : isOllama
+      ? 'Set the default Ollama model and local gateway URL. The shell routes tool-backed turns through the same OpenAI-compatible endpoint.'
+      : 'Set the default model and keep the gateway status readable from the workspace.';
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -105,18 +126,18 @@ export default function ProviderForm({ providerId }: ProviderFormProps) {
               <span className="shell-kicker text-primary-400">Credentials</span>
             </div>
             <p className="mt-3 text-sm leading-7 text-text-secondary">
-              Credentials are stored locally in the OS keyring and only used by the desktop shell.
+              {credentialDescription}
             </p>
           </div>
 
           <div className="space-y-2">
-            <label className="shell-kicker text-text-muted">API Key</label>
+            <label className="shell-kicker text-text-muted">{apiKeyLabel}</label>
             <div className="relative">
               <input
                 type={showKey ? 'text' : 'password'}
                 value={apiKey}
                 onChange={(event) => setApiKey(event.target.value)}
-                placeholder={`Enter ${provider.name} API key`}
+                placeholder={apiKeyPlaceholder}
                 className="cyber-input h-14 w-full rounded-[20px] pr-20"
               />
               <button
@@ -135,7 +156,7 @@ export default function ProviderForm({ providerId }: ProviderFormProps) {
               type="text"
               value={baseUrl}
               onChange={(event) => setBaseUrl(event.target.value)}
-              placeholder="https://api.example.com/v1"
+              placeholder={baseUrlPlaceholder}
               className="cyber-input h-14 w-full rounded-[20px]"
             />
           </div>
@@ -148,7 +169,7 @@ export default function ProviderForm({ providerId }: ProviderFormProps) {
               <span className="shell-kicker text-primary-400">Routing Defaults</span>
             </div>
             <p className="mt-3 text-sm leading-7 text-text-secondary">
-              Set the default model and keep the gateway status readable from the workspace.
+              {routingDescription}
             </p>
           </div>
 
@@ -193,7 +214,7 @@ export default function ProviderForm({ providerId }: ProviderFormProps) {
       <div className="shell-panel-muted mt-auto flex flex-wrap items-center gap-3 border-t border-border-subtle px-4 py-4">
         <button
           type="submit"
-          disabled={saving || !apiKey}
+          disabled={saving || (apiKeyRequired && !apiKey.trim())}
           className="cyber-button text-sm disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {saving ? 'Saving…' : 'Save Provider'}

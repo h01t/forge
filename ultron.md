@@ -258,8 +258,8 @@ pub trait LLMProvider: Send + Sync {
 ### Provider Factory
 
 Providers are created on-demand via `ProviderFactory::create_provider(&config)`. The factory
-maps `ProviderId` to concrete implementations. Unimplemented providers return a
-`PlaceholderProvider` that yields a clear error.
+maps `ProviderId` to concrete implementations. OpenAI-compatible providers share one adapter,
+while Anthropic and Google use dedicated request/response translators.
 
 ```rust
 pub struct ProviderFactory;
@@ -269,7 +269,9 @@ impl ProviderFactory {
         match config.provider_id {
             ProviderId::Anthropic => Ok(Box::new(AnthropicProvider::new(...))),
             ProviderId::OpenAI => Ok(Box::new(OpenAIProvider::new(...))),
-            _ => Ok(Box::new(PlaceholderProvider::new(config.provider_id))),
+            ProviderId::DeepSeek => Ok(Box::new(OpenAIProvider::compatible(...))),
+            ProviderId::Ollama => Ok(Box::new(OpenAIProvider::compatible(...))),
+            ProviderId::Google => Ok(Box::new(GoogleProvider::new(...))),
         }
     }
 
@@ -281,9 +283,9 @@ impl ProviderFactory {
 
 - **Anthropic Claude** (`anthropic.rs`) - Implemented. Uses `/v1/messages` endpoint with Anthropic-specific SSE event types.
 - **OpenAI GPT** (`openai.rs`) - Implemented. Uses `/chat/completions` endpoint with SSE streaming.
-- **Google Gemini** - Planned. Will use Gemini API format.
+- **Google Gemini** (`google.rs`) - Implemented. Uses the Gemini `generateContent` / `streamGenerateContent` APIs with shared tool-call translation.
 - **DeepSeek** - Implemented via the OpenAI-compatible provider path.
-- **Ollama** - Planned. Local inference via OpenAI-compatible endpoint.
+- **Ollama** - Implemented via the OpenAI-compatible provider path with a default local endpoint at `http://localhost:11434/v1`.
 
 ### TypeScript Type System
 
@@ -879,16 +881,16 @@ export const cyberpunkTheme = {
 - [x] Scope tool availability to a conversation-bound project grant
 - [x] Persist recent execution history across conversations
 
-### Phase 4: Additional Providers (Weeks 7-8) — NEXT
+### Phase 4: Additional Providers (Weeks 7-8) — COMPLETE
 
 **Goal**: Expand LLM provider coverage
 
-- [ ] Implement Ollama provider (local inference)
-- [ ] Implement Google Gemini provider
-- [ ] Add provider-specific streaming tests
-- [ ] Improve structured IPC error responses
+- [x] Implement Ollama provider (local inference)
+- [x] Implement Google Gemini provider
+- [x] Add provider-specific streaming tests
+- [x] Improve structured IPC error responses
 
-### Phase 4A: Specialist Tool Expansion
+### Phase 4A: Specialist Tool Expansion — NEXT
 
 **Goal**: Expand beyond the core file/command tool set
 

@@ -31,14 +31,14 @@
 - [x] Add approval previews for writes and commands
 - [x] Create tool management UI
 
-## Phase 4: Provider Expansion — NEXT
+## Phase 4: Provider Expansion — COMPLETE
 
-- [ ] Implement Ollama provider
-- [ ] Implement Google Gemini provider
-- [ ] Add provider-specific streaming tests
-- [ ] Improve structured IPC error responses
+- [x] Implement Ollama provider
+- [x] Implement Google Gemini provider
+- [x] Add provider-specific streaming tests
+- [x] Improve structured IPC error responses
 
-## Later Specialist Tools
+## Next: Specialist Tools
 
 - [ ] Implement `analyze-dependencies` for Cybersecurity Specialist
 - [ ] Implement `scan-network` for Cybersecurity Specialist

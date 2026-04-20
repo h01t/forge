@@ -1,4 +1,5 @@
 use super::anthropic::AnthropicProvider;
+use super::google::GoogleProvider;
 use super::openai::OpenAIProvider;
 use super::types::*;
 use futures_util::Stream;
@@ -36,17 +37,24 @@ impl ProviderFactory {
                 config.api_key.clone(),
                 config.base_url.clone(),
             ))),
-            ProviderId::DeepSeek => {
-                let base_url = config
-                    .base_url
-                    .clone()
-                    .or_else(|| Some("https://api.deepseek.com/v1".to_string()));
-                Ok(Box::new(OpenAIProvider::new(
-                    config.api_key.clone(),
-                    base_url,
-                )))
-            }
-            _ => Ok(Box::new(PlaceholderProvider::new(config.provider_id))),
+            ProviderId::DeepSeek => Ok(Box::new(OpenAIProvider::compatible(
+                ProviderId::DeepSeek,
+                "DeepSeek",
+                config.api_key.clone(),
+                config.base_url.clone(),
+                "https://api.deepseek.com/v1",
+            ))),
+            ProviderId::Ollama => Ok(Box::new(OpenAIProvider::compatible(
+                ProviderId::Ollama,
+                "Ollama",
+                config.api_key.clone(),
+                config.base_url.clone(),
+                "http://localhost:11434/v1",
+            ))),
+            ProviderId::Google => Ok(Box::new(GoogleProvider::new(
+                config.api_key.clone(),
+                config.base_url.clone(),
+            ))),
         }
     }
 
@@ -55,61 +63,10 @@ impl ProviderFactory {
         match provider_id {
             ProviderId::Anthropic => "claude-3-5-sonnet-20241022",
             ProviderId::OpenAI => "gpt-4o",
-            ProviderId::Google => "gemini-2.0-flash-exp",
+            ProviderId::Google => "gemini-2.5-flash",
             ProviderId::DeepSeek => "deepseek-chat",
             ProviderId::Ollama => "llama3.2",
         }
-    }
-}
-
-/// Placeholder provider for unimplemented providers
-struct PlaceholderProvider {
-    id: ProviderId,
-}
-
-impl PlaceholderProvider {
-    fn new(id: ProviderId) -> Self {
-        Self { id }
-    }
-}
-
-#[async_trait::async_trait]
-impl LLMProvider for PlaceholderProvider {
-    fn name(&self) -> &'static str {
-        match self.id {
-            ProviderId::Anthropic => "Anthropic Claude",
-            ProviderId::OpenAI => "OpenAI GPT",
-            ProviderId::Google => "Google Gemini",
-            ProviderId::DeepSeek => "DeepSeek",
-            ProviderId::Ollama => "Ollama",
-        }
-    }
-
-    fn provider_id(&self) -> ProviderId {
-        self.id
-    }
-
-    async fn chat_completion(
-        &self,
-        _request: ChatCompletionRequest,
-    ) -> Result<ChatCompletionResponse, LLMError> {
-        Err(LLMError::UnsupportedOperation(format!(
-            "Provider {} is not yet implemented",
-            self.name()
-        )))
-    }
-
-    async fn stream_completion(
-        &self,
-        _request: ChatCompletionRequest,
-    ) -> Pin<Box<dyn Stream<Item = StreamEvent> + Send>> {
-        use futures_util::StreamExt;
-        futures_util::stream::once(async move {
-            StreamEvent::Error {
-                message: format!("Provider not implemented"),
-            }
-        })
-        .boxed()
     }
 }
 
@@ -118,4 +75,37 @@ static REGISTRY: std::sync::OnceLock<ProviderFactory> = std::sync::OnceLock::new
 
 pub fn get_registry() -> &'static ProviderFactory {
     REGISTRY.get_or_init(|| ProviderFactory)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn creates_real_google_provider() {
+        let config = LLMConfig {
+            provider_id: ProviderId::Google,
+            api_key: "test-key".to_string(),
+            base_url: None,
+            model: None,
+        };
+
+        let provider = ProviderFactory::create_provider(&config).expect("google provider");
+        assert_eq!(provider.provider_id(), ProviderId::Google);
+        assert_eq!(provider.name(), "Google Gemini");
+    }
+
+    #[test]
+    fn creates_real_ollama_provider() {
+        let config = LLMConfig {
+            provider_id: ProviderId::Ollama,
+            api_key: String::new(),
+            base_url: None,
+            model: None,
+        };
+
+        let provider = ProviderFactory::create_provider(&config).expect("ollama provider");
+        assert_eq!(provider.provider_id(), ProviderId::Ollama);
+        assert_eq!(provider.name(), "Ollama");
+    }
 }

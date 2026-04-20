@@ -1,4 +1,4 @@
-use crate::credentials::get_credential_manager;
+use crate::credentials::{get_credential_manager, CredentialError};
 use crate::llm::{
     ChatCompletionRequest, LLMConfig, Message, MessageRole, ProviderFactory, ProviderId,
 };
@@ -69,11 +69,25 @@ fn emit_turn_event(app_handle: &tauri::AppHandle, payload: AgentTurnPayload) {
     let _ = app_handle.emit("agent-turn-event", payload);
 }
 
+fn credential_error_message(provider_id: ProviderId, error: CredentialError) -> String {
+    match error {
+        CredentialError::NotFound(_) => match provider_id {
+            ProviderId::Google => {
+                "Google provider is not configured. Add a Google API key in Provider Settings."
+                    .to_string()
+            }
+            ProviderId::Ollama => "Ollama provider is not configured. Save an Ollama gateway in Provider Settings. API keys are optional, but the base URL and model should be configured.".to_string(),
+            _ => format!("Failed to get credentials: Credential not found: {}", provider_id.as_str()),
+        },
+        other => format!("Failed to get credentials: {}", other),
+    }
+}
+
 fn provider_config(provider_id: ProviderId, model: Option<String>) -> Result<LLMConfig, String> {
     let cred_manager = get_credential_manager();
     let credential = cred_manager
         .get_provider(provider_id)
-        .map_err(|e| format!("Failed to get credentials: {}", e))?;
+        .map_err(|e| credential_error_message(provider_id, e))?;
 
     Ok(LLMConfig {
         provider_id,

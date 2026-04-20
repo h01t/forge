@@ -8,7 +8,7 @@ on your own machine.
 Today, the project is best understood as a polished desktop command surface
 for agent-driven chat, provider routing, approval-gated tools, and local
 persistence. It is not yet a broad autonomous agent platform with unrestricted
-tooling or provider parity across every planned integration.
+tooling or specialist-only tooling beyond the current core set.
 
 ## What It Does Today
 
@@ -16,19 +16,19 @@ Pantheon Forge currently ships three core desktop surfaces:
 
 - `Launchpad`: pick an agent, see provider readiness, and jump back into recent work
 - `Chat Workspace`: hold streaming conversations with a selected agent and route messages through a configured provider
-- `Provider Settings`: manage available providers, default models, and roadmap-only integrations
+- `Provider Settings`: manage live providers, default models, project grants, and tool control
 
 Implemented capabilities:
 
 - `Local-first desktop app`: Tauri 2 shell with a Next.js 16 App Router frontend
 - `Specialized agents`: shared agent registry with Software Engineer and Cybersecurity Specialist definitions
 - `Streaming chat`: provider-backed message streaming with persisted conversations
-- `Provider routing`: Anthropic, OpenAI, and DeepSeek are usable today
+- `Provider routing`: Anthropic, OpenAI, DeepSeek, Google Gemini, and Ollama are usable today
 - `Approved tool execution`: project-scoped `read-file`, `search-files`, `write-file`, and curated `execute-command`
 - `Manual approvals`: every tool request is previewed and requires explicit user approval
 - `Project-scoped access`: conversations bind one remembered project grant at a time
 - `Tool audit trail`: tool executions are persisted and surfaced inline in chat plus Settings
-- `Truthful provider status`: Google and Ollama remain visible, but clearly marked as planned
+- `Provider parity`: Google Gemini and Ollama now participate in chat, streaming, and approval-gated tool turns
 - `Local persistence`: SQLite stores conversations and app-level state
 - `Secure credentials`: API keys live in the OS keyring, not in SQLite
 - `Unified shell`: launchpad, chat, and settings share the same desktop UI system
@@ -84,8 +84,8 @@ Current provider status:
 | Anthropic | Available | Fully configurable in Settings |
 | OpenAI | Available | Fully configurable in Settings |
 | DeepSeek | Available | Routed through the OpenAI-compatible path |
-| Google | Planned | Visible in UI, not configurable |
-| Ollama | Planned | Visible in UI, not configurable |
+| Google | Available | Gemini adapter with streaming and tool-call support |
+| Ollama | Available | OpenAI-compatible local or remote gateway; API key optional |
 
 ## Agents
 
@@ -176,7 +176,7 @@ pnpm tauri:build
 
 ## Current State
 
-Pantheon Forge is in a strong prototype-to-product transition phase.
+Pantheon Forge is in a strong alpha phase with the core chat, tool, and provider systems in place.
 
 What is stable now:
 

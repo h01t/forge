@@ -7,7 +7,6 @@ use serde::{Deserialize, Serialize};
 use std::pin::Pin;
 
 const OPENAI_BASE_URL: &str = "https://api.openai.com/v1";
-const DEFAULT_MODEL: &str = "gpt-4o";
 
 #[derive(Debug, Clone, Serialize)]
 struct OpenAIRequest {
@@ -27,16 +26,11 @@ struct OpenAIRequest {
 
 #[derive(Debug, Clone, Deserialize)]
 struct OpenAIStreamChunk {
-    id: String,
-    object: String,
-    created: u64,
-    model: String,
     choices: Vec<OpenAIStreamChoice>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 struct OpenAIStreamChoice {
-    index: u32,
     delta: OpenAIDelta,
     #[serde(skip_serializing_if = "Option::is_none")]
     finish_reason: Option<String>,
@@ -45,22 +39,15 @@ struct OpenAIStreamChoice {
 #[derive(Debug, Clone, Deserialize)]
 struct OpenAIDelta {
     #[serde(skip_serializing_if = "Option::is_none")]
-    role: Option<MessageRole>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     content: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     tool_calls: Option<Vec<ToolCall>>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
-struct OpenAIUsage {
-    prompt_tokens: u32,
-    completion_tokens: u32,
-    total_tokens: u32,
-}
-
 #[derive(Debug, Clone)]
 pub struct OpenAIProvider {
+    provider_id: ProviderId,
+    provider_name: &'static str,
     api_key: String,
     base_url: String,
     client: Client,
@@ -68,11 +55,76 @@ pub struct OpenAIProvider {
 
 impl OpenAIProvider {
     pub fn new(api_key: String, base_url: Option<String>) -> Self {
-        Self {
+        Self::compatible(
+            ProviderId::OpenAI,
+            "OpenAI GPT",
             api_key,
-            base_url: base_url.unwrap_or(OPENAI_BASE_URL.to_string()),
+            base_url,
+            OPENAI_BASE_URL,
+        )
+    }
+
+    pub fn compatible(
+        provider_id: ProviderId,
+        provider_name: &'static str,
+        api_key: String,
+        base_url: Option<String>,
+        default_base_url: &'static str,
+    ) -> Self {
+        Self {
+            provider_id,
+            provider_name,
+            api_key,
+            base_url: base_url.unwrap_or_else(|| default_base_url.to_string()),
             client: Client::new(),
         }
+    }
+
+    fn with_provider_headers(
+        &self,
+        request: reqwest::RequestBuilder,
+    ) -> reqwest::RequestBuilder {
+        let request = request.header("content-type", "application/json");
+        if self.api_key.trim().is_empty() {
+            request
+        } else {
+            request.header("Authorization", format!("Bearer {}", self.api_key))
+        }
+    }
+
+    async fn api_error_from_response(&self, response: reqwest::Response) -> LLMError {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+
+        if self.provider_id == ProviderId::Ollama && status.is_server_error() {
+            return LLMError::ApiError(format!(
+                "Ollama server unreachable or unavailable at {}. Start Ollama and confirm the configured base URL. Details: {}",
+                self.base_url, error_text
+            ));
+        }
+
+        if status == reqwest::StatusCode::NOT_FOUND
+            || error_text.to_lowercase().contains("model")
+                && error_text.to_lowercase().contains("not found")
+        {
+            return LLMError::ApiError(format!(
+                "{} model not found. Check the configured model name. Details: {}",
+                self.provider_name, error_text
+            ));
+        }
+
+        LLMError::ApiError(format!("{} API error: {}", self.provider_name, error_text))
+    }
+
+    fn request_error(&self, error: reqwest::Error) -> LLMError {
+        if self.provider_id == ProviderId::Ollama && error.is_connect() {
+            return LLMError::ApiError(format!(
+                "Ollama server unreachable. Start Ollama and confirm the base URL (default http://localhost:11434/v1). Details: {}",
+                error
+            ));
+        }
+
+        LLMError::RequestError(error)
     }
 
     async fn do_chat_completion(
@@ -90,20 +142,17 @@ impl OpenAIProvider {
         };
 
         let response = self
-            .client
-            .post(format!("{}/chat/completions", self.base_url))
-            .header("Authorization", format!("Bearer {}", self.api_key))
-            .header("content-type", "application/json")
+            .with_provider_headers(self.client.post(format!(
+                "{}/chat/completions",
+                self.base_url.trim_end_matches('/')
+            )))
             .json(&openai_request)
             .send()
-            .await?;
+            .await
+            .map_err(|error| self.request_error(error))?;
 
         if !response.status().is_success() {
-            let error_text = response.text().await.unwrap_or_default();
-            return Err(LLMError::ApiError(format!(
-                "OpenAI API error: {}",
-                error_text
-            )));
+            return Err(self.api_error_from_response(response).await);
         }
 
         let completion: ChatCompletionResponse = response.json().await?;
@@ -114,14 +163,12 @@ impl OpenAIProvider {
         &self,
         request: ChatCompletionRequest,
     ) -> impl Stream<Item = StreamEvent> + Send {
-        let id = uuid::Uuid::new_v4().to_string();
-        let event_id = id.clone();
+        let event_id = uuid::Uuid::new_v4().to_string();
 
-        // Ensure messages have system role properly
         let has_system = request
             .messages
             .iter()
-            .any(|m| m.role == MessageRole::System);
+            .any(|message| message.role == MessageRole::System);
 
         let mut openai_request = OpenAIRequest {
             model: request.model,
@@ -145,108 +192,98 @@ impl OpenAIProvider {
             );
         }
 
-        let result = async move {
-            match self
-                .client
-                .post(format!("{}/chat/completions", self.base_url))
-                .header("Authorization", format!("Bearer {}", self.api_key))
-                .header("content-type", "application/json")
-                .json(&openai_request)
-                .send()
-                .await
-            {
-                Ok(response) => {
-                    if !response.status().is_success() {
-                        let error_text = response.text().await.unwrap_or_default();
-                        return stream::once(async move {
-                            StreamEvent::Error {
-                                message: format!("OpenAI API error: {}", error_text),
-                            }
-                        })
+        match self
+            .with_provider_headers(self.client.post(format!(
+                "{}/chat/completions",
+                self.base_url.trim_end_matches('/')
+            )))
+            .json(&openai_request)
+            .send()
+            .await
+        {
+            Ok(response) => {
+                if !response.status().is_success() {
+                    let error = self.api_error_from_response(response).await.to_string();
+                    return stream::once(async move { StreamEvent::Error { message: error } })
                         .boxed();
-                    }
-
-                    let byte_stream = response.bytes_stream();
-                    let stream = byte_stream
-                        .map(|result| match result {
-                            Ok(bytes) => String::from_utf8_lossy(&bytes).to_string(),
-                            Err(e) => format!("Error reading stream: {}", e),
-                        })
-                        .flat_map(|s| {
-                            let mut lines = Vec::new();
-                            for line in s.lines() {
-                                if !line.is_empty() {
-                                    lines.push(line.to_string());
-                                }
-                            }
-                            futures_util::stream::iter(lines)
-                        })
-                        .filter_map(|line| async move {
-                            line.strip_prefix("data: ").map(|s| s.to_string())
-                        })
-                        .take_while(|line| std::future::ready(line.as_str() != "[DONE]"))
-                        .filter_map(|json| async move {
-                            serde_json::from_str::<OpenAIStreamChunk>(&json).ok()
-                        })
-                        .map(move |chunk| {
-                            if chunk.choices.is_empty() {
-                                return StreamEvent::Content {
-                                    delta: String::new(),
-                                };
-                            }
-
-                            let choice = &chunk.choices[0];
-
-                            if let Some(finish_reason) = choice.finish_reason.clone() {
-                                return StreamEvent::Done {
-                                    finish_reason: Some(finish_reason),
-                                    usage: None,
-                                };
-                            }
-
-                            if let Some(content) = choice.delta.content.clone() {
-                                return StreamEvent::Content { delta: content };
-                            }
-
-                            if let Some(ref tool_calls) = choice.delta.tool_calls {
-                                for tc in tool_calls {
-                                    return StreamEvent::ToolCall {
-                                        tool_call: tc.clone(),
-                                    };
-                                }
-                            }
-
-                            StreamEvent::Content {
-                                delta: String::new(),
-                            }
-                        });
-
-                    // Add start event
-                    let start = stream::once(async move { StreamEvent::Start { id: event_id } });
-
-                    start.chain(stream).boxed()
                 }
-                Err(e) => stream::once(async move {
-                    StreamEvent::Error {
-                        message: format!("Request failed: {}", e),
-                    }
-                })
-                .boxed(),
-            }
-        };
 
-        result.await
+                let start = stream::once({
+                    let id = event_id.clone();
+                    async move { StreamEvent::Start { id } }
+                });
+
+                let stream = response
+                    .bytes_stream()
+                    .map(|result| match result {
+                        Ok(bytes) => String::from_utf8_lossy(&bytes).to_string(),
+                        Err(error) => format!("Error reading stream: {}", error),
+                    })
+                    .flat_map(|chunk| {
+                        let lines = chunk
+                            .lines()
+                            .filter(|line| !line.is_empty())
+                            .map(|line| line.to_string())
+                            .collect::<Vec<_>>();
+                        futures_util::stream::iter(lines)
+                    })
+                    .filter_map(|line| async move {
+                        line.strip_prefix("data: ").map(|value| value.to_string())
+                    })
+                    .take_while(|line| std::future::ready(line.as_str() != "[DONE]"))
+                    .filter_map(|json| async move {
+                        serde_json::from_str::<OpenAIStreamChunk>(&json).ok()
+                    })
+                    .map(|chunk| {
+                        let Some(choice) = chunk.choices.first() else {
+                            return StreamEvent::Content {
+                                delta: String::new(),
+                            };
+                        };
+
+                        if let Some(finish_reason) = choice.finish_reason.clone() {
+                            return StreamEvent::Done {
+                                finish_reason: Some(finish_reason),
+                                usage: None,
+                            };
+                        }
+
+                        if let Some(content) = choice.delta.content.clone() {
+                            return StreamEvent::Content { delta: content };
+                        }
+
+                        if let Some(tool_call) = choice
+                            .delta
+                            .tool_calls
+                            .as_ref()
+                            .and_then(|tool_calls| tool_calls.first().cloned())
+                        {
+                            return StreamEvent::ToolCall { tool_call };
+                        }
+
+                        StreamEvent::Content {
+                            delta: String::new(),
+                        }
+                    });
+
+                start.chain(stream).boxed()
+            }
+            Err(error) => {
+                let message = self.request_error(error).to_string();
+                stream::once(async move { StreamEvent::Error { message } }).boxed()
+            }
+        }
     }
 }
 
 #[async_trait]
 impl LLMProvider for OpenAIProvider {
     fn name(&self) -> &'static str {
-        "OpenAI GPT"
+        self.provider_name
     }
 
     fn provider_id(&self) -> ProviderId {
-        ProviderId::OpenAI
+        self.provider_id
     }
 
     async fn chat_completion(

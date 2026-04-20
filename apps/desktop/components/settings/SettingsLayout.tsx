@@ -38,7 +38,7 @@ export default function SettingsLayout() {
   return (
     <AppShell
       title="Provider Settings"
-      description="Configure the gateways and project grants that feed the command deck. Available providers are fully operational, while planned integrations remain visible as real roadmap status."
+      description="Configure the live gateways and project grants that feed the command deck. Every listed provider can be routed from chat once it is configured."
       stageWidth="settings"
     >
       <div className="space-y-5">
@@ -55,7 +55,7 @@ export default function SettingsLayout() {
                   Provider registry
                 </h2>
                 <p className="mt-2 text-sm leading-7 text-text-secondary">
-                  Select a gateway to tune routing, inspect readiness, or review planned support.
+                  Select a gateway to tune routing, inspect readiness, or switch the active command path.
                 </p>
               </div>
 
@@ -96,9 +96,7 @@ export default function SettingsLayout() {
                             ) : null}
                           </div>
                           <p className="mt-2 text-xs text-text-secondary">
-                            {provider.status === 'planned'
-                              ? 'Roadmap integration'
-                              : provider.defaultModel}
+                            {provider.defaultModel}
                           </p>
                         </div>
                       </div>
@@ -116,14 +114,10 @@ export default function SettingsLayout() {
                     {activeProvider.name}
                   </h3>
                   <p className="mt-2 text-sm leading-7 text-text-secondary">
-                    {activeProvider.status === 'planned'
-                      ? 'Visible to reflect the platform roadmap, but intentionally not configurable yet.'
-                      : 'Credentials live locally, and the workspace can route turns through this gateway immediately after configuration.'}
+                    Credentials live locally, and the workspace can route turns through this gateway immediately after configuration.
                   </p>
                 </div>
-                <span className="shell-pill">
-                  {activeProvider.status === 'planned' ? 'Roadmap' : 'Configurable'}
-                </span>
+                <span className="shell-pill">Configurable</span>
               </div>
 
               <ProviderForm key={tab} providerId={tab} />

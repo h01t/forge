@@ -106,8 +106,8 @@ export const PROVIDERS: ProviderDefinition[] = [
   {
     id: 'google',
     name: 'Google',
-    defaultModel: 'gemini-2.0-flash-exp',
-    status: 'planned',
+    defaultModel: 'gemini-2.5-flash',
+    status: 'available',
   },
   {
     id: 'deepseek',
@@ -119,7 +119,7 @@ export const PROVIDERS: ProviderDefinition[] = [
     id: 'ollama',
     name: 'Ollama',
     defaultModel: 'llama3.2',
-    status: 'planned',
+    status: 'available',
   },
 ];
 
