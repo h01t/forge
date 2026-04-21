@@ -1,0 +1,11 @@
+flowchart TD
+    A["User prompt"] --> B["Agent turn"]
+    B --> C{"Tool needed?"}
+    C -- No --> D["Return assistant response"]
+    C -- Yes --> E["Generate tool call + approval preview"]
+    E --> F{"User decision"}
+    F -- Deny --> G["Log denial and continue turn"]
+    F -- Approve --> H["Execute tool inside granted project scope"]
+    H --> I["Persist execution log"]
+    I --> J["Return tool result to model"]
+    J --> D

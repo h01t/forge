@@ -1,0 +1,9 @@
+flowchart LR
+    USER["User"] --> HUB["Conversation Workspace Hub"]
+    HUB --> SE["Software Engineer"]
+    HUB --> CYBER["Cybersecurity Specialist"]
+
+    SE -. consult / handoff .-> CYBER
+    CYBER -. implementation follow-through .-> SE
+
+    HUB --> CONTROLS["Shared Tool + Approval Boundary"]

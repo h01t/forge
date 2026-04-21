@@ -38,7 +38,7 @@ After careful consideration of both options, **Tauri** is recommended for Panthe
 │  ┌────────────────────────────────────────────────────────────────────┐ │
 │  │                    Next.js Frontend (React)                        │ │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐             │ │
-│  │  │   Chat UI    │  │ Task Runner  │  │  Settings    │             │ │
+│  │  │  Launchpad   │  │ Chat UI      │  │  Settings    │             │ │
 │  │  └──────────────┘  └──────────────┘  └──────────────┘             │ │
 │  │  ┌──────────────────────────────────────────────────────────────┐  │ │
 │  │  │              Sci-Fi/Cyberpunk Theme System                    │  │ │
@@ -69,10 +69,10 @@ After careful consideration of both options, **Tauri** is recommended for Panthe
 ### Component Description
 
 #### Frontend (Next.js + React)
-- **Chat UI**: Main interface for agent interaction with message history
-- **Task Runner**: Dashboard for monitoring and managing multi-agent tasks
-- **Settings UI**: Configure LLM providers, manage agents, security settings
-- **Theme System**: Comprehensive sci-fi/cyberpunk styling with animations
+- **Launchpad UI**: Entry surface for agent selection, readiness, and recent work
+- **Chat Workspace**: Main conversation interface with streaming responses and tool activity
+- **Settings UI**: Configure providers, project access grants, and tool control
+- **Theme System**: Desktop-oriented cyberpunk visual language and shell layout
 
 #### Backend (Tauri + Rust)
 - **Agent Core**: Data-driven agent registry, system prompt injection, tool filtering
@@ -121,7 +121,6 @@ pantheon-forge/
 │       ├── eslint.config.mjs
 │       ├── tsconfig.json
 │       ├── package.json
-│       └── AGENTS.md
 │
 │       ├── src-tauri/                   # Rust backend
 │       │   ├── src/
@@ -132,6 +131,7 @@ pantheon-forge/
 │       │   │   │   ├── types.rs
 │       │   │   │   ├── registry.rs     # ProviderFactory + LLMProvider trait
 │       │   │   │   ├── anthropic.rs
+│       │   │   │   ├── google.rs
 │       │   │   │   └── openai.rs
 │       │   │   ├── credentials/        # OS keyring credential storage
 │       │   │   │   └── mod.rs
@@ -139,7 +139,7 @@ pantheon-forge/
 │       │   │   │   └── mod.rs
 │       │   │   ├── crypto/             # AES-256-GCM encryption utils
 │       │   │   │   └── mod.rs
-│       │   │   └── migrations/         # SQLx migrations (TODO: adopt)
+│       │   │   └── migrations/         # SQLx migrations
 │       │   ├── Cargo.toml
 │       │   ├── tauri.conf.json
 │       │   └── capabilities/
@@ -176,10 +176,10 @@ pantheon-forge/
 │       │   └── index.ts                # CryptoClient (reserved for future use)
 │       └── package.json
 │
-├── tasks/                               # Development tracking
+├── docs/                                # Public project brief + diagram sources
+├── tasks/                               # Internal development tracking
 │   ├── todo.md                          # Current task plan
 │   └── lessons.md                       # Learned patterns
-├── AGENT.md                             # AI agent working guidelines
 ├── .gitignore
 ├── pnpm-workspace.yaml
 ├── package.json
@@ -202,11 +202,10 @@ pantheon-forge/
 | `@tanstack/react-query` | `^5.67.3` | Server state management |
 | `zustand` | `^5.0.3` | Client state management |
 | `@tauri-apps/api` | `^2.10.1` | Tauri IPC bridge |
-| `lucide-react` | _planned_ | Icon set |
-| `react-markdown` | _planned_ | Markdown rendering |
+| `lucide-react` | `^1.8.0` | Icon set |
 
-> **Note**: Next.js 16 has breaking changes from v15. Always read
-> `node_modules/next/dist/docs/` before writing any code (per AGENTS.md).
+> **Note**: Next.js 16 has breaking changes from v15. Architecture decisions
+> should be validated against the current App Router behavior rather than older assumptions.
 
 ### Backend (Rust)
 

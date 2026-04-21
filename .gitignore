@@ -23,6 +23,9 @@ out/
 # Claude
 .claude/
 .claude/**
+.opencode/
+apps/desktop/AGENTS.md
+apps/desktop/CLAUDE.md
 
 # OS
 .DS_Store

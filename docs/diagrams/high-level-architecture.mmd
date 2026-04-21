@@ -1,0 +1,16 @@
+flowchart LR
+    U["User"] --> UI["Next.js Desktop UI"]
+    UI --> IPC["Tauri IPC Bridge"]
+    IPC --> CORE["Rust Backend"]
+
+    CORE --> STORE["SQLite Storage"]
+    CORE --> KEYRING["OS Keyring"]
+    CORE --> TOOLS["Tool Broker"]
+    CORE --> LLM["Provider Gateway"]
+
+    LLM --> ANTH["Anthropic"]
+    LLM --> OPENAI["OpenAI / DeepSeek"]
+    LLM --> GOOGLE["Google Gemini"]
+    LLM --> OLLAMA["Ollama / Local OpenAI-Compatible Gateway"]
+
+    TOOLS --> PROJECT["Granted Project Directory"]

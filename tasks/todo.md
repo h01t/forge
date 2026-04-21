@@ -1,5 +1,7 @@
 # Tasks
 
+Internal roadmap snapshot for ongoing development. Public project status lives in the root README.
+
 ## Stabilization Pass — COMPLETE
 
 - [x] Normalize stored message roles and repair legacy quoted values via migration

@@ -1,101 +1,136 @@
 # Pantheon Forge
 
-Pantheon Forge is a local-first desktop AI agent workspace. It combines a
-Next.js frontend, a Tauri desktop shell, and a Rust backend so you can chat
-with specialized agents while keeping conversations and provider credentials
-on your own machine.
+Pantheon Forge is a local-first desktop AI agent workspace built with
+Next.js, Tauri, and Rust. It provides a command-deck interface for working
+with specialized agents, switching between LLM providers, and approving
+project-scoped tool execution before any file or command action runs.
 
-Today, the project is best understood as a polished desktop command surface
-for agent-driven chat, provider routing, approval-gated tools, and local
-persistence. It is not yet a broad autonomous agent platform with unrestricted
-tooling or specialist-only tooling beyond the current core set.
+This repository is positioned as an engineering project first: the most
+interesting part of Pantheon Forge is not a generic chat interface, but the
+combination of a desktop-native shell, a Rust orchestration layer, explicit
+agent boundaries, and a safety-conscious approval workflow for tool use.
 
-## What It Does Today
+## Why This Project Exists
+
+Most AI workspaces are either browser-first, cloud-dependent, or vague about
+what an agent is allowed to do. Pantheon Forge explores a different model:
+
+- `Local-first`: conversations, settings, and project context stay on the machine
+- `Explicit agents`: specialist personas are inspectable and data-driven
+- `Provider-flexible`: Anthropic, OpenAI, DeepSeek, Google Gemini, and local gateways are supported
+- `Approval-gated`: tool execution is visible and user-controlled
+- `Desktop-native`: the experience is built around a desktop shell rather than a browser dashboard
+
+## What Is Implemented Today
 
 Pantheon Forge currently ships three core desktop surfaces:
 
-- `Launchpad`: pick an agent, see provider readiness, and jump back into recent work
-- `Chat Workspace`: hold streaming conversations with a selected agent and route messages through a configured provider
-- `Provider Settings`: manage live providers, default models, project grants, and tool control
+- `Launchpad`: agent selection, readiness overview, and quick return to active work
+- `Chat Workspace`: full conversation surface with streaming output, provider routing, and inline tool activity
+- `Provider Settings`: provider configuration, project access grants, and tool execution control/history
 
-Implemented capabilities:
+Current capabilities:
 
-- `Local-first desktop app`: Tauri 2 shell with a Next.js 16 App Router frontend
-- `Specialized agents`: shared agent registry with Software Engineer and Cybersecurity Specialist definitions
-- `Streaming chat`: provider-backed message streaming with persisted conversations
-- `Provider routing`: Anthropic, OpenAI, DeepSeek, Google Gemini, and Ollama are usable today
-- `Approved tool execution`: project-scoped `read-file`, `search-files`, `write-file`, and curated `execute-command`
-- `Manual approvals`: every tool request is previewed and requires explicit user approval
-- `Project-scoped access`: conversations bind one remembered project grant at a time
-- `Tool audit trail`: tool executions are persisted and surfaced inline in chat plus Settings
-- `Provider parity`: Google Gemini and Ollama now participate in chat, streaming, and approval-gated tool turns
-- `Local persistence`: SQLite stores conversations and app-level state
-- `Secure credentials`: API keys live in the OS keyring, not in SQLite
-- `Unified shell`: launchpad, chat, and settings share the same desktop UI system
-
-## What It Does Not Do Yet
-
-These pieces are planned, but not implemented as product-ready features yet:
-
-- multi-agent orchestration beyond selecting different specialist personas
-- broader tool coverage beyond the current read/write/search/curated-command set
-- specialist-only tools like dependency analysis and network scanning
-- broad provider coverage beyond the currently wired providers
-
-If you are looking for the architectural direction behind those future phases,
-see [ultron.md](./ultron.md).
-
-## Product Snapshot
-
-Pantheon Forge is designed around a desktop-first workflow:
-
-- `Launchpad` is the entry surface for orientation and agent selection
-- `Chat` is the main working surface, with conversations, streaming responses, provider-aware routing, and approval-gated tool use
-- `Settings` is where credentials, project grants, and tool control are managed
-
-The UI is intentionally local-app oriented rather than web-dashboard oriented:
-it uses a unified shell, a mature cyberpunk visual system, and a Tauri-native
-window shell.
+- `Two bundled specialist agents`: Software Engineer and Cybersecurity Specialist
+- `Provider-backed chat`: Anthropic, OpenAI, DeepSeek, Google Gemini, and Ollama/OpenAI-compatible local gateways
+- `Project-scoped tools`: read/search/write file actions plus curated command execution
+- `Per-call manual approval`: every tool request is previewed before execution
+- `Persistent local state`: SQLite for conversations/settings and OS keyring storage for credentials
+- `Desktop command shell`: Next.js frontend inside a Tauri application with a Rust backend
 
 ## Architecture
 
-High-level stack:
+Pantheon Forge uses a split architecture: React/Next.js owns the UI, Tauri
+provides the native shell and IPC bridge, and Rust owns provider routing,
+local persistence, and tool execution.
 
-- `Frontend`: Next.js 16, React 19, TypeScript, Tailwind CSS v4
+```mermaid
+flowchart LR
+    U["User"] --> UI["Next.js Desktop UI"]
+    UI --> IPC["Tauri IPC Bridge"]
+    IPC --> CORE["Rust Backend"]
+
+    CORE --> STORE["SQLite Storage"]
+    CORE --> KEYRING["OS Keyring"]
+    CORE --> TOOLS["Tool Broker"]
+    CORE --> LLM["Provider Gateway"]
+
+    LLM --> ANTH["Anthropic"]
+    LLM --> OPENAI["OpenAI / DeepSeek"]
+    LLM --> GOOGLE["Google Gemini"]
+    LLM --> OLLAMA["Ollama / Local OpenAI-Compatible Gateway"]
+
+    TOOLS --> PROJECT["Granted Project Directory"]
+```
+
+### Agent Model
+
+The product is designed around a hub-and-spoke mental model: the user works in
+one workspace, and specialist agents plug into that workspace rather than
+operating as opaque black boxes.
+
+```mermaid
+flowchart LR
+    USER["User"] --> HUB["Conversation Workspace Hub"]
+    HUB --> SE["Software Engineer"]
+    HUB --> CYBER["Cybersecurity Specialist"]
+
+    SE -. consult / handoff .-> CYBER
+    CYBER -. implementation follow-through .-> SE
+
+    HUB --> CONTROLS["Shared Tool + Approval Boundary"]
+```
+
+### Tool Approval Flow
+
+Tool execution is intentionally explicit. Models can request actions, but the
+user remains in control of execution.
+
+```mermaid
+flowchart TD
+    A["User prompt"] --> B["Agent turn"]
+    B --> C{"Tool needed?"}
+    C -- No --> D["Return assistant response"]
+    C -- Yes --> E["Generate tool call + approval preview"]
+    E --> F{"User decision"}
+    F -- Deny --> G["Log denial and continue turn"]
+    F -- Approve --> H["Execute tool inside granted project scope"]
+    H --> I["Persist execution log"]
+    I --> J["Return tool result to model"]
+    J --> D
+```
+
+## Safety Model
+
+Pantheon Forge is intentionally conservative about local execution:
+
+- credentials are stored in the OS keyring rather than in SQLite
+- project access is granted per directory, not globally
+- tools are scoped to the attached project grant
+- tool approvals are explicit and visible in the UI
+- execution history is persisted for auditability
+- command execution is curated rather than arbitrary shell access
+
+## Technical Stack
+
+- `Frontend`: Next.js 16, React 19, TypeScript, Tailwind CSS v4, Zustand
 - `Desktop shell`: Tauri 2
-- `Backend`: Rust IPC commands, provider gateway logic, SQLite storage
-- `State`: Zustand on the frontend
-- `Credentials`: OS keyring via Rust
+- `Backend`: Rust, async IPC commands, provider adapters, tool broker
+- `Storage`: SQLite
+- `Credentials`: OS keyring
 - `Workspace tooling`: pnpm workspaces + Turbo
 
-Runtime model:
+## Project Status
 
-1. The Next.js app renders the desktop UI.
-2. Frontend stores coordinate agent selection, chat state, settings, and conversations.
-3. Tauri IPC bridges frontend actions into Rust commands.
-4. Rust manages provider requests, streaming events, local SQLite storage, and OS-keyring credentials.
+Pantheon Forge is demo-ready as an engineering prototype. The core desktop
+workflow, provider layer, local persistence model, and approval-gated tool
+system are implemented and working.
 
-## Providers
+Near-term work is focused on:
 
-Current provider status:
-
-| Provider | Status | Notes |
-| --- | --- | --- |
-| Anthropic | Available | Fully configurable in Settings |
-| OpenAI | Available | Fully configurable in Settings |
-| DeepSeek | Available | Routed through the OpenAI-compatible path |
-| Google | Available | Gemini adapter with streaming and tool-call support |
-| Ollama | Available | OpenAI-compatible local or remote gateway; API key optional |
-
-## Agents
-
-Current bundled agents:
-
-- `Software Engineer`
-- `Cybersecurity Specialist`
-
-These agents are data-driven and come from the shared agent registry package.
-The desktop app consumes the same shared metadata used across the workspace.
+- specialist-only cybersecurity tools
+- further documentation and release polish
+- deeper multi-agent collaboration beyond the current specialist routing model
 
 ## Repository Layout
 
@@ -104,28 +139,28 @@ ultron/
 ├── apps/
 │   └── desktop/                 # Next.js + Tauri desktop app
 │       ├── app/                 # App Router routes
-│       ├── components/          # Chat, settings, and shell UI
+│       ├── components/          # Chat, shell, settings, and project UI
 │       ├── lib/                 # Tauri bridge and frontend helpers
 │       ├── stores/              # Zustand state stores
-│       └── src-tauri/           # Rust backend, capabilities, migrations
+│       └── src-tauri/           # Rust backend, IPC, migrations, capabilities
 ├── packages/
 │   ├── agent-registry/          # Agent definitions and loaders
-│   ├── agent-types/             # Shared agent/provider types
+│   ├── agent-types/             # Shared TypeScript contracts
 │   ├── crypto/                  # Reserved shared crypto helpers
 │   └── ui/                      # Shared UI primitives
-├── tasks/                       # Project tracking notes
-├── ultron.md                    # Architecture and roadmap direction
-└── README.md
+├── docs/                        # Project brief and diagram sources
+├── tasks/                       # Internal project tracking notes
+└── ultron.md                    # Deeper architecture and roadmap document
 ```
 
-## Getting Started
+## Running The Project
 
 ### Prerequisites
 
 - Node.js `20+`
 - `pnpm` `10.x`
-- Rust toolchain for the Tauri app
-- Platform dependencies required by Tauri on your OS
+- Rust toolchain
+- Tauri desktop prerequisites for your operating system
 
 ### Install
 
@@ -133,79 +168,28 @@ ultron/
 pnpm install
 ```
 
-## Running The Project
+### Develop
 
 From the repo root:
 
 ```bash
-# Run workspace dev tasks
 pnpm dev
-
-# Lint the workspace
 pnpm lint
-
-# Build the workspace
 pnpm build
 ```
 
-From the desktop app package:
+From the desktop app:
 
 ```bash
 cd apps/desktop
-
-# Run the UI in the browser
 pnpm dev
-
-# Run the native Tauri desktop app
 pnpm tauri:dev
-
-# Production build of the desktop frontend
-pnpm build
-
-# Build the packaged Tauri app
-pnpm tauri:build
 ```
 
-## Development Notes
+## Additional Documentation
 
-- The desktop app currently builds with `next build --webpack`.
-- Provider credentials are stored in the OS keyring, not the repository or SQLite.
-- Conversation history persists locally in SQLite.
-- The current UI shell has already been through stabilization and desktop-polish passes.
-- The app is optimized first for a roomy desktop workflow; mobile is not the target.
-
-## Current State
-
-Pantheon Forge is in a strong alpha phase with the core chat, tool, and provider systems in place.
-
-What is stable now:
-
-- desktop shell architecture
-- provider settings flow
-- persisted chat conversations
-- agent registry integration
-- project-scoped tool execution with approval
-- global tool execution history and control-plane UI
-- truthful provider availability in the UI
-- local credential handling
-
-What is next:
-
-- Phase 4 provider expansion
-- specialist-only tool additions
-- deeper agent execution capabilities beyond the curated tool set
-
-## Why This Repo Exists
-
-The project is aiming for a desktop-native agent environment where:
-
-- the user owns the runtime and the data
-- agent personas are explicit and inspectable
-- provider credentials stay local
-- tool execution happens inside a safer, approval-oriented shell
-
-The current codebase already delivers the local workspace and provider/chat
-foundation that those later capabilities will build on.
+- [Project brief](./docs/project-brief.md)
+- [Architecture and roadmap](./ultron.md)
 
 ## License
 
